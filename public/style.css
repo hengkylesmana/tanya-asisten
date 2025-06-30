@@ -2,28 +2,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
 :root {
-    /* Palet Warna */
-    --bg-calm: #f0f4f8;
+    /* PERUBAHAN: Palet Warna Hijau yang Tenang */
+    --bg-calm: #f0fdf4; /* green-50 */
     --container-bg: rgba(255, 255, 255, 0.85);
-    --user-msg-bg: #e0eaff;
+    --user-msg-bg: #dcfce7; /* green-100 */
     --ai-msg-bg: #f3f4f6;
     --primary-text: #1f2937;
-    --secondary-text: #4b5563;
-    --accent-color: #4338ca;
-    --accent-color-hover: #3730a3;
-    --border-color: #d1d5db;
-    --shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+    --secondary-text: #3f6212; /* lime-800 */
+    --accent-color: #22c55e; /* green-500 */
+    --accent-color-hover: #16a34a; /* green-600 */
+    --border-color: #a3e635; /* lime-400 */
+    --shadow: 0 8px 40px rgba(10, 20, 10, 0.1);
     --danger-color: #ef4444;
 }
 
-/* Latar Belakang Interaktif */
 html {
      height: 100%;
 }
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #eaf2ff;
+    background-color: var(--bg-calm); /* Latar belakang hijau sangat muda */
     margin: 0;
     min-height: 100%;
     display: flex;
@@ -33,11 +32,10 @@ body {
     position: relative;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    padding: 10px; /* Padding untuk tampilan desktop */
+    padding: 10px;
     box-sizing: border-box;
 }
 
-/* Ornamen animasi */
 .bg-ornaments {
     position: fixed;
     top: 0;
@@ -51,7 +49,7 @@ body {
 .ornament {
     position: absolute;
     bottom: -150px;
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(34, 197, 94, 0.1); /* Ornamen hijau transparan */
     border-radius: 50%;
     animation: floatUp 25s infinite linear;
 }
@@ -83,7 +81,8 @@ body {
     width: 100%;
     height: 100%;
     z-index: -1;
-    background: linear-gradient(45deg, #dbeafe, #c7d2fe, #ddd6fe, #dcfce7);
+    /* PERUBAHAN: Gradient Hijau */
+    background: linear-gradient(45deg, #dcfce7, #bbf7d0, #a7f3d0, #d1fae5);
     background-size: 400% 400%;
     animation: gradientBG 20s ease infinite;
 }
@@ -113,7 +112,7 @@ body {
 
 header {
     padding: 12px 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #d1d5db;
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
@@ -124,7 +123,18 @@ header {
 
 header:hover { background-color: rgba(0,0,0,0.02); }
 .header-content { display: flex; align-items: center; gap: 12px; }
-header .logo { display: none; }
+
+/* PERUBAHAN: Styling untuk logo GIF */
+.logo-gif {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+}
+.logo-gif.small {
+    width: 40px;
+    height: 40px;
+}
+
 .title-group { text-align: left; }
 .title-group h1 { margin: 0; font-size: 1.3rem; color: var(--primary-text); font-weight: 600; }
 .title-group p { margin: 1px 0 0 0; font-size: 0.7rem; color: var(--secondary-text); }
@@ -142,13 +152,13 @@ header .logo { display: none; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.ai-message h3 { margin-top: 0; margin-bottom: 8px; color: var(--accent-color); font-size: 1.1rem; }
+.ai-message h3 { margin-top: 0; margin-bottom: 8px; color: var(--accent-color-hover); font-size: 1.1rem; }
 .ai-message ul { padding-left: 20px; margin: 10px 0; }
 .ai-message li { margin-bottom: 5px; }
 .ai-message p { margin: 0 0 10px 0; }
 .ai-message p:last-child { margin-bottom: 0; }
-.ai-message hr { border: none; border-top: 1px solid var(--border-color); margin: 15px 0; }
-.chat-link { color: var(--accent-color); text-decoration: underline; font-weight: 600; }
+.ai-message hr { border: none; border-top: 1px solid #d1d5db; margin: 15px 0; }
+.chat-link { color: var(--accent-color-hover); text-decoration: underline; font-weight: 600; }
 .choice-container { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 
 .choice-button {
@@ -161,17 +171,17 @@ header .logo { display: none; }
 .choice-button.selected { background-color: var(--accent-color); color: white; }
 .choice-button:disabled { background-color: #e0e0e0; border-color: #bdbdbd; color: #9e9e9e; cursor: not-allowed; opacity: 0.7; }
 
-.user-message { background-color: var(--user-msg-bg); align-self: flex-end; color: #1e3a8a; border-bottom-right-radius: 5px; }
+.user-message { background-color: var(--user-msg-bg); align-self: flex-end; color: #14532d; border-bottom-right-radius: 5px; }
 .ai-message, .ai-system-message { background-color: var(--ai-msg-bg); align-self: flex-start; border-bottom-left-radius: 5px; }
 .ai-system-message { font-style: italic; color: var(--secondary-text); width: 100%; text-align: center; max-width: 100%; background-color: transparent; padding: 0; animation: none; }
-.input-container { display: flex; padding: 12px; border-top: 1px solid var(--border-color); gap: 10px; align-items: center; flex-shrink: 0; background-color: rgba(255,255,255,0.7); }
+.input-container { display: flex; padding: 12px; border-top: 1px solid #d1d5db; gap: 10px; align-items: center; flex-shrink: 0; background-color: rgba(255,255,255,0.7); }
 
 #user-input {
-    flex: 1; min-width: 0; padding: 12px 18px; border-radius: 22px; border: 1px solid var(--border-color);
+    flex: 1; min-width: 0; padding: 12px 18px; border-radius: 22px; border: 1px solid #d1d5db;
     resize: none; font-family: 'Poppins', sans-serif; font-size: 0.95rem; line-height: 1.5; max-height: 100px;
     overflow-y: auto; background: #fff;
 }
-#user-input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.2); }
+#user-input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2); }
 
 #send-btn, #voice-btn, #end-chat-btn {
     flex-shrink: 0; width: 44px; height: 44px; border: none; border-radius: 50%; color: white;
@@ -180,79 +190,33 @@ header .logo { display: none; }
 
 #send-btn:hover, #voice-btn:hover { transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 #send-btn, #voice-btn { background-color: var(--accent-color); }
-#end-chat-btn { background-color: var(--secondary-text); font-weight: 600; font-size: 0.7rem; padding: 0; }
+#end-chat-btn { background-color: #6b7280; font-weight: 600; font-size: 0.7rem; padding: 0; }
 #voice-btn.recording { background-color: var(--danger-color); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 5px 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 .status-info { padding: 0 20px 8px; font-size: 0.8rem; color: var(--secondary-text); text-align: center; min-height: 1rem; }
-footer { padding: 10px 20px; text-align: center; color: var(--secondary-text); background-color: rgba(243, 244, 246, 0.7); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+footer { padding: 10px 20px; text-align: center; color: var(--secondary-text); background-color: rgba(243, 244, 246, 0.7); border-top: 1px solid #d1d5db; flex-shrink: 0; }
 footer p { margin: 0; font-size: 0.7rem; }
 
 .doctor-info-box {
-    display: none;
-    position: absolute;
-    top: 65px; 
-    left: 5%;
-    width: 90%;
-    background-color: #fff;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    z-index: 10;
-    padding: 20px;
-    box-sizing: border-box;
-    animation: fadeInDown 0.5s ease;
+    display: none; position: absolute; top: 65px; left: 5%; width: 90%;
+    background-color: #fff; border: 1px solid #d1d5db; border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10; padding: 20px;
+    box-sizing: border-box; animation: fadeInDown 0.5s ease;
 }
-.doctor-info-content {
-    max-height: 250px; 
-    overflow-y: auto;
-    font-size: 0.85rem;
-    line-height: 1.7;
-    color: var(--secondary-text);
-}
-.doctor-info-content h4 {
-    font-size: 0.9rem;
-    color: var(--primary-text);
-    margin-top: 15px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
-}
-.doctor-info-content ul {
-    list-style-type: none;
-    padding-left: 5px;
-}
-.doctor-info-content li {
-    margin-bottom: 8px;
-    padding-left: 15px;
-    position: relative;
-}
-.doctor-info-content li::before {
-    content: '•';
-    position: absolute;
-    left: 0;
-    color: var(--accent-color);
-}
-.doctor-info-close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 1.8rem;
-    font-weight: bold;
-    cursor: pointer;
-    color: var(--secondary-text);
-    transition: color 0.2s;
-}
-.doctor-info-close:hover {
-    color: var(--primary-text);
-}
+.doctor-info-content { max-height: 250px; overflow-y: auto; font-size: 0.85rem; line-height: 1.7; color: var(--secondary-text); }
+.doctor-info-content h4 { font-size: 0.9rem; color: var(--primary-text); margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.doctor-info-content ul { list-style-type: none; padding-left: 5px; }
+.doctor-info-content li { margin-bottom: 8px; padding-left: 15px; position: relative; }
+.doctor-info-content li::before { content: '•'; position: absolute; left: 0; color: var(--accent-color); }
+.doctor-info-close { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; font-weight: bold; cursor: pointer; color: #6b7280; transition: color 0.2s; }
+.doctor-info-close:hover { color: var(--primary-text); }
 @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* GAYA LAYAR PEMBUKA */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     display: flex; justify-content: center; align-items: center;
     z-index: 1000; opacity: 1; transition: opacity 0.5s ease, visibility 0.5s; visibility: visible;
-     background-color: rgba(0,0,0,0.3); /* Latar belakang sedikit gelap */
+    background-color: rgba(0,0,0,0.3);
 }
 .modal-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .start-content {
@@ -263,7 +227,8 @@ footer p { margin: 0; font-size: 0.7rem; }
     animation: popUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 @keyframes popUp { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-.start-content .logo { margin-bottom: 16px; }
+
+.start-content .logo-gif { margin-bottom: 16px; }
 .start-title-container { margin-bottom: 20px; }
 .start-title-container p { font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
 .start-title-container p:nth-child(1) { font-size: 1.8rem; }
@@ -282,65 +247,38 @@ footer p { margin: 0; font-size: 0.7rem; }
 .start-content .modal-button {
     background-color: var(--accent-color); color: white; border: none; padding: 14px 24px;
     border-radius: 50px; cursor: pointer; font-size: 0.95rem; font-weight: 600;
-    transition: all 0.2s; box-shadow: 0 4px 15px rgba(67, 56, 202, 0.2);
+    transition: all 0.2s; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
     width: 100%; box-sizing: border-box; text-align: center;
 }
 
-.start-content .modal-button:hover { transform: translateY(-3px); box-shadow: 0 7px 25px rgba(67, 56, 202, 0.3); }
+.start-content .modal-button:hover { transform: translateY(-3px); box-shadow: 0 7px 25px rgba(34, 197, 94, 0.3); }
 .start-content .modal-button.secondary { background-color: transparent; color: var(--accent-color); border: 2px solid var(--accent-color); box-shadow: none; }
 .start-content .modal-button.secondary:hover { background-color: var(--accent-color); color: white; }
 
-/* REKOMENDASI: Tambahan CSS untuk Tampilan Mobile (Responsif) */
 @media (max-width: 768px) {
     body {
-        padding: 0; /* Hapus padding agar container bisa full-screen */
-        align-items: flex-start; /* Mulai container dari atas */
+        padding: 0;
+        align-items: flex-start;
     }
 
     .container {
         min-height: 100vh;
-        width: 100%; /* Gunakan lebar penuh */
+        width: 100%;
         max-width: 100%;
-        height: auto; /* Biarkan tinggi menyesuaikan konten */
+        height: auto;
         border-radius: 0;
         box-shadow: none;
         border: none;
     }
 
-    .title-group h1 {
-        font-size: 1.1rem;
-    }
-    .title-group p {
-        font-size: 0.65rem;
-    }
-    header {
-        padding: 10px 15px;
-    }
-
-    .chat-container {
-        padding: 15px;
-    }
-
-    .chat-message {
-        font-size: 0.9rem;
-    }
-    
-    .start-content {
-        width: 90%;
-        padding: 24px;
-    }
-    .start-title-container p:nth-child(1) {
-        font-size: 1.5rem;
-    }
-    .start-title-container p:nth-child(2) {
-        font-size: 1rem;
-    }
-    
-    .info-box {
-        font-size: 0.85rem;
-    }
-
-    footer p {
-        font-size: 0.75rem;
-    }
+    .title-group h1 { font-size: 1.1rem; }
+    .title-group p { font-size: 0.65rem; }
+    header { padding: 10px 15px; }
+    .chat-container { padding: 15px; }
+    .chat-message { font-size: 0.9rem; }
+    .start-content { width: 90%; padding: 24px; }
+    .start-title-container p:nth-child(1) { font-size: 1.5rem; }
+    .start-title-container p:nth-child(2) { font-size: 1rem; }
+    .info-box { font-size: 0.85rem; }
+    footer p { font-size: 0.75rem; }
 }
