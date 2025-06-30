@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerTitle = document.getElementById('header-title');
     const headerSubtitle = document.getElementById('header-subtitle');
     
-    // PENYEMPURNAAN: Menambahkan konstanta untuk kotak info baru
     const qolbuInfoBox = document.getElementById('qolbu-info-box');
     const qolbuInfoClose = document.getElementById('qolbu-info-close');
     const doctorInfoBox = document.getElementById('doctor-info-box');
@@ -54,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startTestBtn.addEventListener('click', () => initializeApp({ isTest: true }));
         startDoctorBtn.addEventListener('click', () => initializeApp({ isDoctor: true }));
         
-        // PENYEMPURNAAN: Menambahkan event listener untuk tombol close baru
         qolbuInfoClose.addEventListener('click', () => { qolbuInfoBox.style.display = 'none'; });
         doctorInfoClose.addEventListener('click', () => { doctorInfoBox.style.display = 'none'; });
 
@@ -87,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startOverlay.classList.add('hidden');
         chatContainer.innerHTML = '';
         
-        // Sembunyikan semua kotak info terlebih dahulu
         doctorInfoBox.style.display = 'none';
         qolbuInfoBox.style.display = 'none';
         
@@ -95,10 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMode = 'qolbu';
             headerTitle.textContent = "Asisten Qolbu";
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
-            // PENYEMPURNAAN: Menampilkan kotak info yang benar
             qolbuInfoBox.style.display = 'block';
             isTesting = false; 
-            const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu, siap membantu Anda menemukan rujukan dan ketenangan. Ada yang bisa saya bantu?";
+            // PENYEMPURNAAN: Sapaan awal diperbarui
+            const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Allah, siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda dibutuhkan.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
         } else if (mode.isTest) {
@@ -114,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMode = 'doctor';
             headerTitle.textContent = "Tanya ke Dokter AI";
             headerSubtitle.textContent = "Saya siap membantu, Bosku";
-            // PENYEMPURNAAN: Menampilkan kotak info yang benar
             doctorInfoBox.style.display = 'block';
             isTesting = false;
             const welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
@@ -172,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Sisa fungsi (handleSendMessageWithChoice, updateButtonVisibility, TTS, dll) tetap sama
-    // ...
     function handleSendMessageWithChoice(choice) { /* ... */ }
     function updateButtonVisibility() { /* ... */ }
     function handleCancelResponse() { /* ... */ }
