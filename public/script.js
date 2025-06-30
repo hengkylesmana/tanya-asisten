@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg failed: ', err));
             });
         }
-        // PERBAIKAN: Fungsi loadVoices() dihapus karena logikanya dipindahkan ke speakAsync
         displayInitialMessage();
         updateButtonVisibility();
 
@@ -93,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
             qolbuInfoBox.style.display = 'block';
             isTesting = false; 
-            const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Allah, siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda dibutuhkan.";
+            // PENYEMPURNAAN: Ejaan "Allah" diubah menjadi "Alloh"
+            const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Alloh siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda butuhkan.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
         } else if (mode.isTest) {
@@ -165,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // PERBAIKAN: Fungsi speakAsync dibuat lebih andal
     function speakAsync(text, isAIResponse = false) {
         return new Promise((resolve) => {
             if (!('speechSynthesis' in window)) {
@@ -174,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Fungsi internal untuk melakukan proses bicara
             const doSpeak = () => {
                 window.speechSynthesis.cancel();
                 
@@ -189,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 utterance.pitch = 1;
 
                 if (isAIResponse) {
-                    // Selalu coba cari suara Bahasa Indonesia setiap kali akan berbicara
                     const voices = window.speechSynthesis.getVoices();
                     let indonesianVoice = voices.find(v => v.lang === 'id-ID');
                     if (indonesianVoice) {
@@ -207,13 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.speechSynthesis.speak(utterance);
             };
 
-            // Cek apakah daftar suara sudah dimuat. Jika belum, tunggu event-nya.
             if (window.speechSynthesis.getVoices().length === 0) {
                 window.speechSynthesis.onvoiceschanged = () => {
                     doSpeak();
                 };
             } else {
-                // Jika sudah dimuat, langsung bicara.
                 doSpeak();
             }
         });
