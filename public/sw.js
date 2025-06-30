@@ -1,8 +1,10 @@
-// Nama cache diubah untuk memaksa pembaruan
-const CACHE_NAME = 'rasa-cache-v2'; 
+// Nama cache diubah untuk memaksa pembaruan jika ada versi sebelumnya
+const CACHE_NAME = 'rasa-cache-v3'; 
 const urlsToCache = [
   '/',
   '/index.html',
+  '/style.css',      // BARU: Menambahkan file CSS ke cache
+  '/script.js',      // BARU: Menambahkan file JavaScript ke cache
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -13,7 +15,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Cache dibuka. Menambahkan file inti ke cache.');
         return cache.addAll(urlsToCache);
       })
   );
@@ -21,17 +23,17 @@ self.addEventListener('install', event => {
 
 // 2. Proses Fetch: Mengambil file dari cache jika offline
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('/api/chat')) {
-    return event.respondWith(fetch(event.request));
+  // Jangan cache permintaan API, selalu ambil dari jaringan
+  if (event.request.url.includes('/api/')) {
+    return;
   }
 
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
+        // Jika file ada di cache, kembalikan dari cache.
+        // Jika tidak, ambil dari jaringan.
+        return response || fetch(event.request);
       }
     )
   );
@@ -39,7 +41,6 @@ self.addEventListener('fetch', event => {
 
 // 3. Proses Aktivasi: Membersihkan cache lama
 self.addEventListener('activate', event => {
-  // Array ini berisi semua nama cache yang ingin dipertahankan
   const cacheWhitelist = [CACHE_NAME]; 
   event.waitUntil(
     caches.keys().then(cacheNames => {
