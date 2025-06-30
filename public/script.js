@@ -83,15 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
         startOverlay.classList.add('hidden');
         chatContainer.innerHTML = '';
         
-        // Sembunyikan semua kotak info
         doctorInfoBox.style.display = 'none';
         qolbuInfoBox.style.display = 'none';
         
         if (mode.isQolbu) {
             currentMode = 'qolbu';
             headerTitle.textContent = "Asisten Qolbu";
-            headerSubtitle.textContent = "Siap mendengarkan, Bosku";
-            // PENYEMPURNAAN: Mekanisme disamakan dengan Asisten Pribadi
+            headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
+            qolbuInfoBox.style.display = 'block';
             isTesting = false; // Memastikan tombol interaksi aktif
             // PENYEMPURNAAN: Sapaan awal direvisi
             const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
