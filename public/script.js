@@ -91,16 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
             headerTitle.textContent = "Asisten Qolbu";
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
             qolbuInfoBox.style.display = 'block';
-            isTesting = false; 
-            // PENYEMPURNAAN: Ejaan "Allah" diubah menjadi "Alloh"
-            const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Alloh siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda butuhkan.";
+            isTesting = false; // Memastikan tombol interaksi aktif
+            // PENYEMPURNAAN: Sapaan awal direvisi
+            const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
         } else if (mode.isTest) {
             currentMode = 'psychologist';
             headerTitle.textContent = "Tes Kepribadian";
             headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
-            isTesting = true;
+            isTesting = true; // Tombol interaksi dinonaktifkan selama tes
             currentTestType = 'selection';
             const introMessage = `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
             displayMessage(introMessage, 'ai');
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headerTitle.textContent = "Tanya ke Dokter AI";
             headerSubtitle.textContent = "Saya siap membantu, Bosku";
             doctorInfoBox.style.display = 'block';
-            isTesting = false;
+            isTesting = false; // Memastikan tombol interaksi aktif
             const welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMode = 'assistant';
             headerTitle.textContent = "Asisten Pribadi";
             headerSubtitle.textContent = "Siap melayani, Bosku";
-            isTesting = false; 
+            isTesting = false; // Memastikan tombol interaksi aktif
             const welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -126,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonVisibility();
     }
     
-    // Fungsi-fungsi lain tidak diubah
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
         const userText = userInput.value.trim();
@@ -189,11 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isAIResponse) {
                     const voices = window.speechSynthesis.getVoices();
                     let indonesianVoice = voices.find(v => v.lang === 'id-ID');
-                    if (indonesianVoice) {
-                        utterance.voice = indonesianVoice;
-                    } else {
-                        console.warn("Suara Bahasa Indonesia tidak ditemukan.");
-                    }
+                    if (indonesianVoice) utterance.voice = indonesianVoice;
                 }
 
                 utterance.onend = () => resolve();
@@ -205,18 +200,36 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    doSpeak();
-                };
+                window.speechSynthesis.onvoiceschanged = doSpeak;
             } else {
                 doSpeak();
             }
         });
     }
 
-    // Sisa fungsi (handleSendMessageWithChoice, updateButtonVisibility, dll) tetap sama
+    // Fungsi-fungsi lain tidak diubah
     function handleSendMessageWithChoice(choice) { /* ... */ }
-    function updateButtonVisibility() { /* ... */ }
+    function updateButtonVisibility() {
+        const isTyping = userInput.value.length > 0;
+        const isInputDisabled = isTesting;
+
+        userInput.disabled = isInputDisabled;
+        userInput.placeholder = isInputDisabled ? "Jawab melalui tombol..." : "Tulis pesan untuk saya, Bosku...";
+
+        if (isInputDisabled) {
+            sendBtn.style.display = 'none';
+            voiceBtn.style.display = 'none';
+        } else if (isRecording) {
+            sendBtn.style.display = 'none';
+            voiceBtn.style.display = 'flex';
+        } else if (isTyping) {
+            sendBtn.style.display = 'flex';
+            voiceBtn.style.display = 'none';
+        } else {
+            sendBtn.style.display = 'none';
+            voiceBtn.style.display = 'flex';
+        }
+    }
     function handleCancelResponse() { /* ... */ }
     function toggleMainRecording() { /* ... */ }
     function startRecording() { /* ... */ }
