@@ -111,18 +111,16 @@ header {
     align-items: center;
     cursor: pointer;
     transition: background-color 0.2s;
-    /* PENYEMPURNAAN 3: Memberi warna latar pada header */
     background-color: var(--header-footer-bg);
 }
 
 header:hover { background-color: rgba(34, 197, 94, 0.1); }
 .header-content { display: flex; align-items: center; gap: 12px; }
 
-/* PENYEMPURNAAN 1: Styling untuk logo PNG baru */
 .logo-img {
     width: 72px;
     height: 72px;
-    object-fit: contain; /* Memastikan logo tidak terdistorsi */
+    object-fit: contain;
 }
 .logo-img.small {
     width: 40px;
@@ -193,12 +191,15 @@ footer {
     padding: 10px 20px; 
     text-align: center; 
     color: var(--secondary-text); 
-    /* PENYEMPURNAAN 3: Memberi warna latar pada footer */
     background-color: var(--header-footer-bg); 
     border-top: 1px solid #d1d5db; 
     flex-shrink: 0; 
 }
-footer p { margin: 0; font-size: 0.7rem; }
+footer p { 
+    margin: 0; 
+    /* Ukuran font diperkecil sedikit */
+    font-size: 0.6rem; 
+}
 
 .doctor-info-box { display: none; position: absolute; top: 65px; left: 5%; width: 90%; background-color: #fff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10; padding: 20px; box-sizing: border-box; animation: fadeInDown 0.5s ease; }
 .doctor-info-content { max-height: 250px; overflow-y: auto; font-size: 0.85rem; line-height: 1.7; color: var(--secondary-text); }
@@ -233,7 +234,18 @@ footer p { margin: 0; font-size: 0.7rem; }
 
 @media (max-width: 768px) {
     body { padding: 0; align-items: flex-start; }
-    .container { min-height: 100vh; width: 100%; max-width: 100%; height: auto; border-radius: 0; box-shadow: none; border: none; }
+    
+    .container {
+        /* PERBAIKAN 1: Membuat layout sticky di mobile */
+        height: 100vh; /* Mengisi seluruh tinggi layar */
+        height: 100dvh; /* Fallback untuk browser modern, mengatasi bar navigasi mobile */
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+    }
+
     .title-group h1 { font-size: 1.1rem; }
     .title-group p { font-size: 0.65rem; }
     header { padding: 10px 15px; }
@@ -243,5 +255,9 @@ footer p { margin: 0; font-size: 0.7rem; }
     .start-title-container p:nth-child(1) { font-size: 1.5rem; }
     .start-title-container p:nth-child(2) { font-size: 1rem; }
     .info-box { font-size: 0.85rem; }
-    footer p { font-size: 0.75rem; }
+
+    footer p {
+        /* PERBAIKAN 2: Ukuran font footer di mobile disesuaikan */
+        font-size: 0.6rem;
+    }
 }
