@@ -42,10 +42,8 @@
                 <p>Saya juga bisa memandumu untuk lebih mengenali karakter dan potensi yang tersimpan dalam dirimu melalui sesi Tes Kepribadian singkat.</p>
             </div>
             <div class="start-button-group">
-                <!-- Urutan Tombol Disesuaikan -->
                 <button id="start-curhat-btn" class="modal-button">Tanya ke Asisten Pribadi</button>
                 <button id="start-doctor-btn" class="modal-button">Tanya ke Dokter AI</button>
-                <!-- PENYEMPURNAAN: Tombol baru "Tanya ke Asisten Qolbu" ditambahkan di posisi ke-3 -->
                 <button id="start-qolbu-btn" class="modal-button">Tanya ke Asisten Qolbu</button>
                 <button id="start-test-btn" class="modal-button secondary">Tes Kepribadian dan Potensi Diri</button>
             </div>
@@ -64,21 +62,63 @@
             </div>
         </header>
 
-        <div id="doctor-info-box" class="doctor-info-box">
-            <span id="doctor-info-close" class="doctor-info-close">&times;</span>
-            <div class="doctor-info-content">
-                <p><strong>Saya Dokter AI,</strong> yang telah dilatih khusus dengan dasar ilmu kedokteran, spesialis, klinis, dan patologi. Saya dikembangkan dengan pemahaman kedokteran yang menyeluruh dan dengan kemampuan komunikasi memahami pola keluhan Anda dari sisi medis.</p>
+        <!-- PENYEMPURNAAN: Kotak Info Baru untuk Asisten Qolbu -->
+        <div id="qolbu-info-box" class="info-popup-box">
+            <span id="qolbu-info-close" class="info-popup-close">&times;</span>
+            <div class="info-popup-content">
+                <p><strong>Saya Asisten Anda yang telah dilatih dengan bank data yang merujuk kepada Al Qur'an, hadits dan literatur islami.</strong> Saya dikembangkan untuk membantu menemukan rujukan islami.</p>
+                <p><em>Disclaimer : Segala rujukan dalam aplikasi ini untuk membantu literasi Anda dan bukan fatwa atau bukan pengganti nasihat ulama. Mohon rujuk langsung kepada Ahli Ilmu Agama untuk konsultasi dan bimbingan lebih dalam.</em></p>
                 
+                <h4>Contoh mencari rujukan:</h4>
+                <h5>Ilmu Tauhid:</h5>
+                <ul>
+                    <li>Apa makna Laa ilaha illallah?</li>
+                    <li>Apa itu syirik besar?</li>
+                </ul>
+                <h5>Dasar Hukum / Dalil:</h5>
+                <ul>
+                    <li>Apa dalil kewajiban sholat lima waktu?</li>
+                    <li>Jelaskan hukum warisan dalam Islam?</li>
+                </ul>
+                <h5>Tafsir Hukum:</h5>
+                <ul>
+                    <li>Apa hukum merayakan ulang tahun menurut Islam?</li>
+                    <li>Bagaimana hukum memakai emas bagi pria?</li>
+                </ul>
+                <h5>Tata Cara Ibadah:</h5>
+                <ul>
+                    <li>Apa rukun wudhu yang wajib?</li>
+                    <li>Bagaimana cara tayamum saat tidak ada air?</li>
+                </ul>
+                <h5>Muamalah:</h5>
+                <ul>
+                    <li>Apa hukum jual beli kredit?</li>
+                    <li>Bagaimana akad nikah yang sah?</li>
+                </ul>
+
+                <h4>Metodologi Asisten Qolbu dalam memberikan rujukan islami:</h4>
+                <p><strong>1. Berbasis Pengetahuan Utama</strong><br>Basis pengetahuan merujuk pada sumber primer dan sekunder yang otoritatif:</p>
+                <ul>
+                    <li><strong>Al-Qur'an dan Ulumul Qur'an:</strong> Tafsir ath-Thabari, Ibnu Katsir, dan al-Qurthubi.</li>
+                    <li><strong>Hadits dan Ulumul Hadits:</strong> Shahih al-Bukhari, Shahih Muslim, Riyadhus Shalihin, dan Arba'in an-Nawawiyyah.</li>
+                </ul>
+                <p><strong>2. Hierarki dan Pendekatan Dalam Menyusun Rujukan Islami</strong><br>Saat menjawab, saya akan mengikuti hierarki: Al-Qur'an, lalu Hadits Shahih, kemudian pendapat ulama salaf, dan selalu berusaha menyebutkan sumber.</p>
+            </div>
+        </div>
+
+        <div id="doctor-info-box" class="info-popup-box">
+            <span id="doctor-info-close" class="info-popup-close">&times;</span>
+            <div class="info-popup-content">
+                <p><strong>Saya Dokter AI,</strong> yang telah dilatih khusus dengan dasar ilmu kedokteran, spesialis, klinis, dan patologi.</p>
                 <h4>Contoh Komunikasi Gejala dan Keluhan</h4>
                 <ul>
                     <li>Dok, saya sering bersin-bersin pagi hari.</li>
                     <li>Saya merasa ngilu di pinggang setelah duduk lama.</li>
                 </ul>
-
                 <h4>Contoh Pertanyaan tentang Obat & Layanan Kesehatan</h4>
                  <ul>
                     <li>Obat Paracetamol sebenarnya untuk penyakit apa, ya?</li>
-                    <li>Cara minum obat Amoxicillin gimana, sebelum atau sesudah makan?</li>
+                    <li>Cara minum obat Amoxicillin gimana?</li>
                 </ul>
             </div>
         </div>
@@ -95,7 +135,6 @@
         <footer><p>© 2025 RASA, Asisten Pribadi Versi 1.1.0 — Powered by AI & Insight Spiritual | by Hengky Lesmana</p></footer>
     </div>
 
-    <!-- Memanggil file JavaScript Eksternal -->
     <script src="script.js"></script>
 </body>
 </html>
