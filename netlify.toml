@@ -1,9 +1,16 @@
+# Konfigurasi Build
 [build]
-  # BARIS INI MEMBERITAHU NETLIFY UNTUK MENCARI FILE WEBSITE DI DALAM FOLDER "public"
+  # BARIS INI WAJIB ADA: Memberitahu Netlify bahwa website Anda berada di folder "public"
   publish = "public"
+  # Baris ini memberitahu Netlify di mana menemukan folder functions Anda
   functions = "netlify/functions"
 
+# Konfigurasi Pengalihan (Redirect)
 [[redirects]]
+  # Mengalihkan semua permintaan yang dimulai dengan /api/
   from = "/api/*"
-  to = "/.netlify/functions/:splat" # Sedikit perbaikan path untuk kecocokan yang lebih baik
+  # Ke fungsi yang sesuai. Jika URL adalah /api/chat, :splat akan menjadi "chat".
+  # Hasilnya akan dialihkan ke /.netlify/functions/chat
+  to = "/.netlify/functions/:splat"
+  # Status 200 berarti pengalihan ini transparan bagi pengguna
   status = 200
