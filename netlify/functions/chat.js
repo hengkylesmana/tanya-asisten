@@ -10,7 +10,7 @@ exports.handler = async (event) => {
 
     if (!GEMINI_API_KEY) {
         console.error("Kesalahan: GOOGLE_GEMINI_API_KEY tidak ditemukan.");
-        return { statusCode: 500, body: JSON.stringify({ error: 'Kunci API belum diatur dengan benar di server.' }) };
+        return { statusCode: 500, body: JSON.stringify({ error: 'Kunci API belum diatur dengan benar.' }) };
     }
 
     try {
@@ -23,54 +23,61 @@ exports.handler = async (event) => {
         
         let systemPrompt;
 
-        // Logika untuk memilih persona AI berdasarkan mode
-        if (mode === 'doctor') {
+        if (mode === 'qolbu') {
+            // PENYEMPURNAAN: Persona baru untuk Asisten Qolbu dengan basis pengetahuan Islami
             systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah "Dokter AI RASA". Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya".
+            Anda adalah "Asisten Qolbu", seorang asisten virtual yang dilatih untuk memberikan rujukan dan wawasan berdasarkan literatur Islam. Sapa pengguna dengan "Bosku" dan sebut diri Anda "Saya".
 
+            **METODOLOGI DAN BASIS PENGETAHUAN (WAJIB DIIKUTI):**
+            Anda harus menjawab pertanyaan dengan mengikuti hierarki dan pendekatan berikut:
+            1.  **DASAR PENGETAHUAN:** Jawaban Anda harus selalu merujuk pada sumber-sumber otoritatif berikut:
+                * **Al-Qur'an dan Ulumul Qur'an:** Prioritaskan rujukan pada Tafsir ath-Thabari, Tafsir Ibnu Katsir, dan Tafsir al-Qurthubi.
+                * **Hadits dan Ulumul Hadits:** Rujukan tertinggi adalah Shahih al-Bukhari dan Shahih Muslim. Untuk tema akhlak dan adab, gunakan Riyadhus Shalihin dan Arba'in an-Nawawiyyah.
+            2.  **HIERARKI JAWABAN:**
+                * **Pertama, cari rujukan dari Al-Qur'an.**
+                * **Kedua, cari penjelasan dari Hadits Shahih.**
+                * **Ketiga, kutip pendapat ulama tafsir besar** seperti Ibnu Jarir ath-Thabari dan Ibnu Katsir untuk memperkaya jawaban.
+            3.  **TRANSPARANSI SUMBER:** Selalu usahakan untuk menyebutkan sumber rujukan Anda. Contoh: "(Menurut Tafsir Ibnu Katsir...)", "(Dalam sebuah hadits yang diriwayatkan oleh Bukhari...)".
+            4.  **DISCLAIMER WAJIB:** Setiap jawaban HARUS dianggap sebagai rujukan literasi, BUKAN FATWA. Selalu ingatkan pengguna bahwa untuk keputusan hukum akhir dan bimbingan mendalam, mereka harus merujuk kepada ulama dan ahli ilmu agama yang kompeten.
+
+            **CONTOH PERTANYAAN YANG BISA ANDA JAWAB:**
+            * **Ilmu Tauhid:** Apa makna Laa ilaha illallah? Apa itu syirik besar?
+            * **Dasar Hukum / Dalil:** Apa dalil kewajiban sholat lima waktu?
+            * **Tafsir Hukum:** Apa hukum merayakan ulang tahun menurut Islam?
+            * **Tata Cara Ibadah:** Apa rukun wudhu yang wajib?
+            * **Muamalah:** Apa hukum jual beli kredit?
+
+            **RIWAYAT PERCAKAPAN SEBELUMNYA (UNTUK KONTEKS):**
+            ${(history || []).map(h => `${h.role}: ${h.text}`).join('\n')}
+            `;
+        } else if (mode === 'doctor') {
+            systemPrompt = `
+            **IDENTITAS DAN PERAN UTAMA ANDA:**
+            Anda adalah "Dokter AI RASA". Sapa pengguna "Bosku". Sebut diri Anda "Saya".
             **BASIS PENGETAHUAN ANDA:**
-            Pengetahuan Anda didasarkan pada referensi kedokteran utama seperti Harrison’s Principles of Internal Medicine, Robbins & Cotran Pathologic Basis of Disease, Guyton & Hall Textbook of Medical Physiology, Katzung's Basic & Clinical Pharmacology, dan Buku Ajar Ilmu Penyakit Dalam edisi terbaru.
-
+            Pengetahuan Anda didasarkan pada referensi kedokteran utama...
             **PROTOKOL KOMUNIKASI (SANGAT PENTING):**
             ... (alur protokol medis tidak diubah) ...
-            `;
-        } else if (mode === 'qolbu') {
-            // PENYEMPURNAAN: Persona baru "qolbu" yang merupakan duplikasi dari "doctor"
-            systemPrompt = `
-            **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah "Asisten Qolbu". Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya". Meskipun nama Anda "Asisten Qolbu", Anda memiliki basis pengetahuan medis yang sama persis dengan Dokter AI dan harus mengikuti protokol medis yang sama untuk menjawab keluhan kesehatan.
-
-            **BASIS PENGETAHUAN ANDA:**
-            Pengetahuan Anda didasarkan pada referensi kedokteran utama seperti Harrison’s Principles of Internal Medicine, Robbins & Cotran Pathologic Basis of Disease, Guyton & Hall Textbook of Medical Physiology, Katzung's Basic & Clinical Pharmacology, dan Buku Ajar Ilmu Penyakit Dalam edisi terbaru.
-
-            **PROTOKOL KOMUNIKASI (SANGAT PENTING DAN HARUS DIIKUTI):**
-            Anda harus mengikuti alur dan protokol yang sama persis dengan Dokter AI. Mulai dari investigasi gejala satu per satu, memberikan kesimpulan sementara, hingga memberikan disclaimer dan anjuran rujukan medis jika diperlukan.
             `;
         } else if (mode === 'psychologist') {
              systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah pemandu Tes Kepribadian RASA. Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya".
+            Anda adalah pemandu Tes Kepribadian RASA. Sapa "Bosku". Sebut diri Anda "Saya".
             ... (alur tes tidak berubah) ...
             `;
         } else { // mode 'assistant'
             systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah "RASA", seorang Asisten Pribadi AI yang profesional, efisien, dan sangat loyal. 
-            
-            **ATURAN KOMUNIKASI WAJIB:**
-            1.  **SAPAAN:** Selalu sapa pengguna dengan sebutan "Bosku".
-            2.  **IDENTITAS DIRI:** Selalu sebut diri Anda dengan kata "Saya".
+            Anda adalah "RASA", Asisten Pribadi AI yang profesional. Sapa "Bosku". Sebut diri Anda "Saya".
             ... (alur asisten pribadi tidak berubah) ...
             `;
         }
         
-        const fullPrompt = `${systemPrompt}\n\n**RIWAYAT PERCAKAPAN TERAKHIR:**\n${(history || []).slice(-4).map(h => `${h.role}: ${h.text}`).join('\n')}\n\n**PESAN DARI BOSKU SAAT INI:**\nBosku: "${prompt}"\n\n**RESPONS SAYA:**`;
+        const fullPrompt = `${systemPrompt}\n\n**PESAN DARI BOSKU SAAT INI:**\nBosku: "${prompt}"\n\n**RESPONS SAYA:**`;
         
         const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const textPayload = {
-            contents: [{ role: "user", parts: [{ text: fullPrompt }] }]
-        };
+        const textPayload = { contents: [{ role: "user", parts: [{ text: fullPrompt }] }] };
         
         const textApiResponse = await fetch(geminiApiUrl, {
             method: 'POST',
@@ -81,7 +88,7 @@ exports.handler = async (event) => {
         const textData = await textApiResponse.json();
 
         if (!textApiResponse.ok || !textData.candidates || !textData.candidates[0].content) {
-            console.error('Error atau respons tidak valid dari Gemini API:', textData);
+            console.error('Error dari Gemini API:', textData);
             throw new Error('Gagal mendapat respons dari Google AI.');
         }
 
