@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
             qolbuInfoBox.style.display = 'block';
             isTesting = false; 
-            // PENYEMPURNAAN: Sapaan awal diperbarui
+            // PENYEMPURNAAN: Sapaan awal untuk teks dan suara diperbarui
             const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Allah, siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda dibutuhkan.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
