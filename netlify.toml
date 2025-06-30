@@ -1,16 +1,33 @@
-# Konfigurasi Build
+# =============================================================================
+# Netlify Build & Functions Configuration
+# =============================================================================
+# Ini memberitahu Netlify tentang pengaturan dasar build Anda.
+
 [build]
-  # BARIS INI WAJIB ADA: Memberitahu Netlify bahwa website Anda berada di folder "public"
+  # Publish directory:
+  # Ini adalah folder yang berisi file-file website Anda (frontend).
+  # Semua yang ada di sini akan di-deploy dan dapat diakses publik.
   publish = "public"
-  # Baris ini memberitahu Netlify di mana menemukan folder functions Anda
+
+  # Functions directory:
+  # Ini adalah folder tempat Netlify akan mencari serverless functions (backend).
   functions = "netlify/functions"
 
-# Konfigurasi Pengalihan (Redirect)
+# =============================================================================
+# Netlify Redirects & Rewrites Configuration
+# =============================================================================
+# Bagian ini mengatur bagaimana Netlify menangani permintaan URL.
+
 [[redirects]]
-  # Mengalihkan semua permintaan yang dimulai dengan /api/
+  # Aturan ini akan menangkap setiap permintaan yang dimulai dengan "/api/".
+  # Contoh: /api/chat, /api/another_function
   from = "/api/*"
-  # Ke fungsi yang sesuai. Jika URL adalah /api/chat, :splat akan menjadi "chat".
-  # Hasilnya akan dialihkan ke /.netlify/functions/chat
+
+  # Permintaan tersebut akan dialihkan (rewrite) secara internal ke serverless function yang sesuai.
+  # Contoh: permintaan ke "/api/chat" akan dieksekusi oleh file "/.netlify/functions/chat.js".
+  # :splat adalah placeholder untuk semua yang cocok dengan tanda bintang (*).
   to = "/.netlify/functions/:splat"
-  # Status 200 berarti pengalihan ini transparan bagi pengguna
+
+  # Status 200 berarti ini adalah "rewrite", bukan "redirect".
+  # URL di browser pengguna tidak akan berubah, membuat backend terasa seperti bagian dari situs utama.
   status = 200
