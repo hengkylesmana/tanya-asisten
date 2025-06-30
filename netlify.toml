@@ -1,33 +1,33 @@
 # =============================================================================
-# Netlify Build & Functions Configuration
+# Konfigurasi Build & Deploy Netlify
 # =============================================================================
-# Ini memberitahu Netlify tentang pengaturan dasar build Anda.
 
 [build]
   # Publish directory:
-  # Ini adalah folder yang berisi file-file website Anda (frontend).
-  # Semua yang ada di sini akan di-deploy dan dapat diakses publik.
+  # WAJIB: Baris ini memberitahu Netlify bahwa folder "public" adalah
+  # folder utama yang berisi semua file website (HTML, CSS, JS).
   publish = "public"
 
   # Functions directory:
-  # Ini adalah folder tempat Netlify akan mencari serverless functions (backend).
+  # Memberitahu Netlify di mana folder untuk serverless functions (backend) berada.
   functions = "netlify/functions"
 
 # =============================================================================
-# Netlify Redirects & Rewrites Configuration
+# Aturan Pengalihan (Redirects & Rewrites)
 # =============================================================================
-# Bagian ini mengatur bagaimana Netlify menangani permintaan URL.
+# Bagian ini sangat penting untuk menghubungkan frontend ke backend.
 
 [[redirects]]
-  # Aturan ini akan menangkap setiap permintaan yang dimulai dengan "/api/".
-  # Contoh: /api/chat, /api/another_function
+  # Aturan ini akan menangkap setiap permintaan dari website Anda
+  # yang dimulai dengan "/api/". Contoh: /api/chat
   from = "/api/*"
 
-  # Permintaan tersebut akan dialihkan (rewrite) secara internal ke serverless function yang sesuai.
-  # Contoh: permintaan ke "/api/chat" akan dieksekusi oleh file "/.netlify/functions/chat.js".
-  # :splat adalah placeholder untuk semua yang cocok dengan tanda bintang (*).
+  # Permintaan tersebut akan dialihkan secara internal ke serverless function yang sesuai.
+  # :splat adalah placeholder untuk apa pun yang cocok dengan tanda bintang (*).
+  # Contoh: permintaan ke "/api/chat" akan dieksekusi oleh file di "/.netlify/functions/chat.js".
   to = "/.netlify/functions/:splat"
 
   # Status 200 berarti ini adalah "rewrite", bukan "redirect".
-  # URL di browser pengguna tidak akan berubah, membuat backend terasa seperti bagian dari situs utama.
+  # URL di browser pengguna tidak akan berubah, membuat backend terasa seperti 
+  # bagian dari situs utama dan menghindari masalah CORS.
   status = 200
