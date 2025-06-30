@@ -28,23 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRecording = false;
     let audioContext = null;
     let isTesting = false;
-    let currentTestType = null;
-    let testData = {};
-    let testScores = {};
-    let currentTestQuestionIndex = 0;
     let currentMode = 'assistant';
 
-    // Inisialisasi SpeechRecognition API
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.lang = 'id-ID';
         recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-    } else {
-        console.log("Browser tidak mendukung Speech Recognition.");
-        voiceBtn.style.display = 'none'; // Sembunyikan tombol jika tidak didukung
     }
 
     function init() {
@@ -55,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateButtonVisibility();
 
-        // Event listener untuk tombol di layar awal
         startQolbuBtn.addEventListener('click', () => initializeApp({ isQolbu: true }));
         startCurhatBtn.addEventListener('click', () => initializeApp({ isAssistant: true }));
         startTestBtn.addEventListener('click', () => initializeApp({ isTest: true }));
@@ -82,13 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Event listener untuk SpeechRecognition
         if (recognition) {
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 userInput.value = transcript;
                 updateButtonVisibility();
-                handleSendMessage(); // Langsung kirim setelah transkrip didapat
+                handleSendMessage();
             };
             recognition.onstart = () => {
                 isRecording = true;
@@ -132,32 +121,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
-        } else if (mode.isTest) {
-            currentMode = 'psychologist';
-            headerTitle.textContent = "Tes Kepribadian";
-            headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
-            isTesting = true;
-            currentTestType = 'selection';
-            const introMessage = `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
-            displayMessage(introMessage, 'ai');
-            speakAsync("Selamat datang di tes kepribadian, Bosku. Silakan pilih pendekatan.", true);
-        } else if (mode.isDoctor) {
-            currentMode = 'doctor';
-            headerTitle.textContent = "Tanya ke Dokter AI";
-            headerSubtitle.textContent = "Saya siap membantu, Bosku";
-            doctorInfoBox.style.display = 'block';
-            isTesting = false;
-            const welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
+        } else { // All other modes
+            isTesting = mode.isTest || false;
+            currentMode = mode.isTest ? 'psychologist' : (mode.isDoctor ? 'doctor' : 'assistant');
+            headerTitle.textContent = mode.isTest ? "Tes Kepribadian" : (mode.isDoctor ? "Tanya ke Dokter AI" : "Asisten Pribadi");
+            headerSubtitle.textContent = mode.isTest ? "Saya akan memandu Anda, Bosku" : (mode.isDoctor ? "Saya siap membantu, Bosku" : "Siap melayani, Bosku");
+            if(mode.isDoctor) doctorInfoBox.style.display = 'block';
+
+            const welcomeMessage = mode.isTest ? `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]` : (mode.isDoctor ? "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?" : "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?");
             displayMessage(welcomeMessage, 'ai');
-            speakAsync(welcomeMessage, true);
-        } else { // mode.isAssistant
-            currentMode = 'assistant';
-            headerTitle.textContent = "Asisten Pribadi";
-            headerSubtitle.textContent = "Siap melayani, Bosku";
-            isTesting = false;
-            const welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?";
-            displayMessage(welcomeMessage, 'ai');
-            speakAsync(welcomeMessage, true);
+            speakAsync(welcomeMessage.split('[PILIHAN')[0], true);
         }
         updateButtonVisibility();
     }
@@ -210,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function speakAsync(text, isAIResponse = false) {
         return new Promise((resolve) => {
             if (!('speechSynthesis' in window)) {
-                console.warn("Speech Synthesis tidak didukung.");
                 resolve();
                 return;
             }
@@ -218,10 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const doSpeak = () => {
                 window.speechSynthesis.cancel();
                 
-                const textForSpeech = text.replace(/\[[^\]]+\]\([^)]+\)/g, '') 
-                                         .replace(/\[LINK:.*?\](.*?)\[\/LINK\]/g, '$1')
-                                         .replace(/[*#]/g, '')
-                                         .replace(/\bAI\b/g, 'E Ai');
+                const textForSpeech = text.replace(/\[[^\]]+\]/g, ''); // Hapus semua tag [TAG:...]
                 
                 const utterance = new SpeechSynthesisUtterance(textForSpeech);
                 utterance.lang = 'id-ID';
@@ -267,41 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceBtn.disabled = isThinking || isTesting;
     }
 
-    /**
-     * PENYEMPURNAAN: Fungsi untuk membatalkan respons AI (Tombol SKIP)
-     */
     function handleCancelResponse() {
-        // 1. Batalkan permintaan fetch jika sedang berjalan
-        if (abortController) {
-            abortController.abort();
-            console.log("Permintaan Fetch dibatalkan.");
-        }
-        // 2. Hentikan sintesis suara yang sedang berjalan
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-        // 3. Hentikan rekaman suara jika sedang berjalan
-        if (recognition && isRecording) {
-            recognition.stop();
-        }
+        if (abortController) abortController.abort();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (recognition && isRecording) recognition.stop();
         statusDiv.textContent = "Dibatalkan.";
         setTimeout(() => { statusDiv.textContent = ""; }, 2000);
         updateButtonVisibility();
     }
 
-    /**
-     * PENYEMPURNAAN: Fungsi untuk memulai/menghentikan rekaman suara
-     */
     function toggleMainRecording() {
         if (!recognition) return;
-
         if (isRecording) {
             recognition.stop();
         } else {
-            // Hentikan dulu jika ada suara AI yang masih berjalan
-            if ('speechSynthesis'in window) {
-                window.speechSynthesis.cancel();
-            }
+            if ('speechSynthesis'in window) window.speechSynthesis.cancel();
             recognition.start();
         }
     }
@@ -312,31 +261,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let formattedMessage = message.replace(/\n/g, '<br>');
 
-        // Parsing kustom untuk link dan pilihan
-        formattedMessage = formattedMessage.replace(/\[LINK:(.*?)\](.*?)\[\/LINK\]/g, '<a href="$1" target="_blank" class="chat-link">$2</a>');
+        // Regex untuk semua jenis tombol
+        const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
+        const buttons = [...formattedMessage.matchAll(buttonRegex)];
         
-        const choiceRegex = /\[PILIHAN:(.*?)\]/g;
-        const choices = formattedMessage.match(choiceRegex);
-        
-        if (choices) {
-            formattedMessage = formattedMessage.replace(choiceRegex, '');
+        if (buttons.length > 0) {
+            formattedMessage = formattedMessage.replace(buttonRegex, '').trim();
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'choice-container';
             
-            const choiceText = choices[0].replace('[PILIHAN:', '').replace(']', '');
-            choiceText.split('|').forEach(choice => {
-                const button = document.createElement('button');
-                button.className = 'choice-button';
-                button.textContent = choice.trim();
-                button.onclick = () => {
-                    // Nonaktifkan semua tombol pilihan setelah satu dipilih
-                    choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
-                    button.classList.add('selected');
-                    // Kirim pilihan sebagai pesan pengguna
-                    displayMessage(choice.trim(), 'user');
-                    getAIResponse(choice.trim());
-                };
-                choiceContainer.appendChild(button);
+            buttons.forEach(match => {
+                const type = match[1]; // PILIHAN atau TOMBOL
+                const text = match[2]; // Isi dari tombol
+                
+                if (type === 'PILIHAN') {
+                    text.split('|').forEach(choice => {
+                        const button = document.createElement('button');
+                        button.className = 'choice-button';
+                        button.textContent = choice.trim();
+                        button.onclick = () => {
+                            choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
+                            button.classList.add('selected');
+                            displayMessage(choice.trim(), 'user');
+                            getAIResponse(choice.trim());
+                        };
+                        choiceContainer.appendChild(button);
+                    });
+                } else if (type === 'TOMBOL') {
+                    const button = document.createElement('button');
+                    button.className = 'choice-button';
+                    button.textContent = text.trim();
+                    button.onclick = () => {
+                        button.disabled = true;
+                        button.classList.add('selected');
+                        // Kirim prompt spesifik untuk meminta penjelasan lebih lanjut
+                        handleSendMessageWithText(text.trim());
+                    };
+                    choiceContainer.appendChild(button);
+                }
             });
             messageElement.innerHTML = formattedMessage;
             messageElement.appendChild(choiceContainer);
@@ -346,6 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Fungsi helper untuk mengirim pesan secara internal
+    function handleSendMessageWithText(text) {
+        conversationHistory.push({ role: 'user', text: text });
+        displayMessage(text, 'user');
+        getAIResponse(text);
     }
     
     init();
