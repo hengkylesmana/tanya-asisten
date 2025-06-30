@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // State aplikasi
     let conversationHistory = []; 
-    let speechVoices = [];
     let abortController = null;
     let recognition = null;
     let isRecording = false;
@@ -43,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg failed: ', err));
             });
         }
-        loadVoices();
+        // PERBAIKAN: Fungsi loadVoices() dihapus karena logikanya dipindahkan ke speakAsync
         displayInitialMessage();
         updateButtonVisibility();
 
@@ -94,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
             qolbuInfoBox.style.display = 'block';
             isTesting = false; 
-            // PENYEMPURNAAN: Sapaan awal untuk teks dan suara diperbarui
             const welcomeMessage = "Assalamualaikum, Bosku. Saya hadir sebagai Asisten Qolbu, yang dengan izin Allah, siap membantu menjawab, menelusuri dan menyajikan rujukan Islami yang Anda dibutuhkan.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -167,15 +165,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Sisa fungsi (handleSendMessageWithChoice, updateButtonVisibility, TTS, dll) tetap sama
+    // PERBAIKAN: Fungsi speakAsync dibuat lebih andal
+    function speakAsync(text, isAIResponse = false) {
+        return new Promise((resolve) => {
+            if (!('speechSynthesis' in window)) {
+                console.warn("Speech Synthesis tidak didukung.");
+                resolve();
+                return;
+            }
+
+            // Fungsi internal untuk melakukan proses bicara
+            const doSpeak = () => {
+                window.speechSynthesis.cancel();
+                
+                const textForSpeech = text.replace(/\[[^\]]+\]\([^)]+\)/g, '') 
+                                         .replace(/\[LINK:.*?\](.*?)\[\/LINK\]/g, '$1')
+                                         .replace(/[*]/g, '')
+                                         .replace(/\bAI\b/g, 'E Ai');
+                
+                const utterance = new SpeechSynthesisUtterance(textForSpeech);
+                utterance.lang = 'id-ID';
+                utterance.rate = 0.95;
+                utterance.pitch = 1;
+
+                if (isAIResponse) {
+                    // Selalu coba cari suara Bahasa Indonesia setiap kali akan berbicara
+                    const voices = window.speechSynthesis.getVoices();
+                    let indonesianVoice = voices.find(v => v.lang === 'id-ID');
+                    if (indonesianVoice) {
+                        utterance.voice = indonesianVoice;
+                    } else {
+                        console.warn("Suara Bahasa Indonesia tidak ditemukan.");
+                    }
+                }
+
+                utterance.onend = () => resolve();
+                utterance.onerror = (e) => {
+                    console.error("Terjadi kesalahan pada sintesis suara:", e);
+                    resolve(e);
+                };
+                window.speechSynthesis.speak(utterance);
+            };
+
+            // Cek apakah daftar suara sudah dimuat. Jika belum, tunggu event-nya.
+            if (window.speechSynthesis.getVoices().length === 0) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    doSpeak();
+                };
+            } else {
+                // Jika sudah dimuat, langsung bicara.
+                doSpeak();
+            }
+        });
+    }
+
+    // Sisa fungsi (handleSendMessageWithChoice, updateButtonVisibility, dll) tetap sama
     function handleSendMessageWithChoice(choice) { /* ... */ }
     function updateButtonVisibility() { /* ... */ }
     function handleCancelResponse() { /* ... */ }
     function toggleMainRecording() { /* ... */ }
     function startRecording() { /* ... */ }
     function stopRecording() { /* ... */ }
-    function loadVoices() { /* ... */ }
-    function speakAsync(text, isAIResponse = false) { /* ... */ }
     function displayInitialMessage() { /* ... */ }
     function displayMessage(message, sender) { /* ... */ }
     
