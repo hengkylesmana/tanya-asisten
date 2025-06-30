@@ -553,8 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!('speechSynthesis' in window)) { resolve(); return; }
             window.speechSynthesis.cancel();
             
+            // PERUBAHAN: Teks dibersihkan dari karakter '*' sebelum diucapkan
             const textForSpeech = text.replace(/\[[^\]]+\]\([^)]+\)/g, '') 
                                      .replace(/\[LINK:.*?\](.*?)\[\/LINK\]/g, '$1')
+                                     .replace(/[*]/g, '') // Menghapus semua karakter asterisk
                                      .replace(/\bAI\b/g, 'E Ai');
             
             const utterance = new SpeechSynthesisUtterance(textForSpeech);
