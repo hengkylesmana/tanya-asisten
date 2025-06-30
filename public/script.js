@@ -34,15 +34,25 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTestQuestionIndex = 0;
     let currentMode = 'assistant';
 
-    const fullTestData = { /* Data tes tidak berubah */ };
-    
+    // Inisialisasi SpeechRecognition API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'id-ID';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+    } else {
+        console.log("Browser tidak mendukung Speech Recognition.");
+        voiceBtn.style.display = 'none'; // Sembunyikan tombol jika tidak didukung
+    }
+
     function init() {
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg failed: ', err));
             });
         }
-        displayInitialMessage();
         updateButtonVisibility();
 
         // Event listener untuk tombol di layar awal
@@ -71,6 +81,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleSendMessage();
             }
         });
+
+        // Event listener untuk SpeechRecognition
+        if (recognition) {
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                updateButtonVisibility();
+                handleSendMessage(); // Langsung kirim setelah transkrip didapat
+            };
+            recognition.onstart = () => {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                statusDiv.textContent = "Saya mendengarkan...";
+                updateButtonVisibility();
+            };
+            recognition.onend = () => {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusDiv.textContent = "";
+                updateButtonVisibility();
+            };
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
+            };
+        }
     }
     
     function initializeApp(mode = {}) {
@@ -82,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         startOverlay.classList.add('hidden');
         chatContainer.innerHTML = '';
+        conversationHistory = [];
         
         doctorInfoBox.style.display = 'none';
         qolbuInfoBox.style.display = 'none';
@@ -91,8 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headerTitle.textContent = "Asisten Qolbu";
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
             qolbuInfoBox.style.display = 'block';
-            isTesting = false; // Memastikan tombol interaksi aktif
-            // PENYEMPURNAAN: Sapaan awal direvisi
+            isTesting = false;
             const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -100,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMode = 'psychologist';
             headerTitle.textContent = "Tes Kepribadian";
             headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
-            isTesting = true; // Tombol interaksi dinonaktifkan selama tes
+            isTesting = true;
             currentTestType = 'selection';
             const introMessage = `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
             displayMessage(introMessage, 'ai');
@@ -110,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headerTitle.textContent = "Tanya ke Dokter AI";
             headerSubtitle.textContent = "Saya siap membantu, Bosku";
             doctorInfoBox.style.display = 'block';
-            isTesting = false; // Memastikan tombol interaksi aktif
+            isTesting = false;
             const welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -118,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMode = 'assistant';
             headerTitle.textContent = "Asisten Pribadi";
             headerSubtitle.textContent = "Siap melayani, Bosku";
-            isTesting = false; // Memastikan tombol interaksi aktif
+            isTesting = false;
             const welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?";
             displayMessage(welcomeMessage, 'ai');
             speakAsync(welcomeMessage, true);
@@ -130,10 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isRecording || isTesting) return;
         const userText = userInput.value.trim();
         if (!userText) return;
+
+        conversationHistory.push({ role: 'user', text: userText });
         displayMessage(userText, 'user');
         userInput.value = '';
         userInput.style.height = 'auto';
         updateButtonVisibility();
+        
         await getAIResponse(userText);
     }
     
@@ -141,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         abortController = new AbortController();
         statusDiv.textContent = "Saya sedang berpikir...";
         updateButtonVisibility();
+
         try {
             const apiResponse = await fetch('/api/chat', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -150,15 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
             const result = await apiResponse.json();
             const responseText = result.aiText || `Maaf, Bosku. Bisa diulangi lagi?`;
+            
             if (responseText) {
+                conversationHistory.push({ role: 'ai', text: responseText });
                 displayMessage(responseText, 'ai');
                 await speakAsync(responseText, true);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-               displayMessage(`Maaf, Bosku, ada gangguan koneksi.`, 'ai-system');
+               displayMessage(`Maaf, Bosku, ada gangguan koneksi atau respons dibatalkan.`, 'ai-system');
             }
         } finally {
+            abortController = null;
             statusDiv.textContent = "";
             updateButtonVisibility();
         }
@@ -177,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const textForSpeech = text.replace(/\[[^\]]+\]\([^)]+\)/g, '') 
                                          .replace(/\[LINK:.*?\](.*?)\[\/LINK\]/g, '$1')
-                                         .replace(/[*]/g, '')
+                                         .replace(/[*#]/g, '')
                                          .replace(/\bAI\b/g, 'E Ai');
                 
                 const utterance = new SpeechSynthesisUtterance(textForSpeech);
@@ -185,11 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 utterance.rate = 0.95;
                 utterance.pitch = 1;
 
-                if (isAIResponse) {
-                    const voices = window.speechSynthesis.getVoices();
-                    let indonesianVoice = voices.find(v => v.lang === 'id-ID');
-                    if (indonesianVoice) utterance.voice = indonesianVoice;
-                }
+                const voices = window.speechSynthesis.getVoices();
+                let indonesianVoice = voices.find(v => v.lang === 'id-ID');
+                if (indonesianVoice) utterance.voice = indonesianVoice;
 
                 utterance.onend = () => resolve();
                 utterance.onerror = (e) => {
@@ -207,35 +248,105 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fungsi-fungsi lain tidak diubah
-    function handleSendMessageWithChoice(choice) { /* ... */ }
     function updateButtonVisibility() {
         const isTyping = userInput.value.length > 0;
-        const isInputDisabled = isTesting;
+        const isThinking = !!abortController;
+        const isInputDisabled = isTesting || isRecording || isThinking;
 
         userInput.disabled = isInputDisabled;
-        userInput.placeholder = isInputDisabled ? "Jawab melalui tombol..." : "Tulis pesan untuk saya, Bosku...";
+        userInput.placeholder = isTesting ? "Jawab melalui tombol..." : (isRecording ? "Mendengarkan..." : "Tulis pesan untuk saya, Bosku...");
 
-        if (isInputDisabled) {
-            sendBtn.style.display = 'none';
-            voiceBtn.style.display = 'none';
-        } else if (isRecording) {
-            sendBtn.style.display = 'none';
-            voiceBtn.style.display = 'flex';
-        } else if (isTyping) {
+        if (isTyping && !isInputDisabled) {
             sendBtn.style.display = 'flex';
             voiceBtn.style.display = 'none';
         } else {
             sendBtn.style.display = 'none';
             voiceBtn.style.display = 'flex';
         }
+        
+        voiceBtn.disabled = isThinking || isTesting;
     }
-    function handleCancelResponse() { /* ... */ }
-    function toggleMainRecording() { /* ... */ }
-    function startRecording() { /* ... */ }
-    function stopRecording() { /* ... */ }
-    function displayInitialMessage() { /* ... */ }
-    function displayMessage(message, sender) { /* ... */ }
+
+    /**
+     * PENYEMPURNAAN: Fungsi untuk membatalkan respons AI (Tombol SKIP)
+     */
+    function handleCancelResponse() {
+        // 1. Batalkan permintaan fetch jika sedang berjalan
+        if (abortController) {
+            abortController.abort();
+            console.log("Permintaan Fetch dibatalkan.");
+        }
+        // 2. Hentikan sintesis suara yang sedang berjalan
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        // 3. Hentikan rekaman suara jika sedang berjalan
+        if (recognition && isRecording) {
+            recognition.stop();
+        }
+        statusDiv.textContent = "Dibatalkan.";
+        setTimeout(() => { statusDiv.textContent = ""; }, 2000);
+        updateButtonVisibility();
+    }
+
+    /**
+     * PENYEMPURNAAN: Fungsi untuk memulai/menghentikan rekaman suara
+     */
+    function toggleMainRecording() {
+        if (!recognition) return;
+
+        if (isRecording) {
+            recognition.stop();
+        } else {
+            // Hentikan dulu jika ada suara AI yang masih berjalan
+            if ('speechSynthesis'in window) {
+                window.speechSynthesis.cancel();
+            }
+            recognition.start();
+        }
+    }
+
+    function displayMessage(message, sender) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', `${sender}-message`);
+
+        let formattedMessage = message.replace(/\n/g, '<br>');
+
+        // Parsing kustom untuk link dan pilihan
+        formattedMessage = formattedMessage.replace(/\[LINK:(.*?)\](.*?)\[\/LINK\]/g, '<a href="$1" target="_blank" class="chat-link">$2</a>');
+        
+        const choiceRegex = /\[PILIHAN:(.*?)\]/g;
+        const choices = formattedMessage.match(choiceRegex);
+        
+        if (choices) {
+            formattedMessage = formattedMessage.replace(choiceRegex, '');
+            const choiceContainer = document.createElement('div');
+            choiceContainer.className = 'choice-container';
+            
+            const choiceText = choices[0].replace('[PILIHAN:', '').replace(']', '');
+            choiceText.split('|').forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-button';
+                button.textContent = choice.trim();
+                button.onclick = () => {
+                    // Nonaktifkan semua tombol pilihan setelah satu dipilih
+                    choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
+                    button.classList.add('selected');
+                    // Kirim pilihan sebagai pesan pengguna
+                    displayMessage(choice.trim(), 'user');
+                    getAIResponse(choice.trim());
+                };
+                choiceContainer.appendChild(button);
+            });
+            messageElement.innerHTML = formattedMessage;
+            messageElement.appendChild(choiceContainer);
+        } else {
+            messageElement.innerHTML = formattedMessage;
+        }
+
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
     
     init();
 });
