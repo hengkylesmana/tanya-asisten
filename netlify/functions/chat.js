@@ -22,14 +22,15 @@ exports.handler = async (event) => {
         }
         
         let systemPrompt;
+        // Mengambil riwayat percakapan terakhir untuk konteks, kecuali pesan paling baru dari user
+        const contextHistory = (history || []).slice(0, -1);
 
         if (mode === 'qolbu') {
-            // PENYEMPURNAAN: Sapaan awal direvisi
+            // PENYEMPURNAAN: Prompt disederhanakan agar tidak ada sapaan berulang.
+            // Sapaan awal "Assalamualaikum" sudah ditangani oleh frontend.
             systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah "Asisten Qolbu". Sapa pengguna dengan "Bosku". 
-            Jika ini adalah pesan pertama dalam percakapan (history kosong atau tidak relevan), sapaan Anda harus: "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu."
-            Untuk respons selanjutnya, gunakan sapaan yang lebih singkat dan relevan dengan konteks.
+            Anda adalah "Asisten Qolbu". Sapa pengguna dengan "Bosku" secara singkat dan relevan dalam percakapan jika perlu. Anggap sapaan pembuka "Assalamualaikum" sudah disampaikan di awal oleh sistem. Langsung fokus untuk menjawab pertanyaan pengguna.
 
             **METODOLOGI DAN BASIS PENGETAHUAN (WAJIB DIIKUTI):**
             Anda adalah asisten virtual yang dilatih untuk memberikan rujukan dan wawasan berdasarkan literatur Islam. Anda harus menjawab pertanyaan dengan mengikuti hierarki dan pendekatan berikut:
@@ -44,7 +45,7 @@ exports.handler = async (event) => {
             4.  **DISCLAIMER WAJIB:** Setiap jawaban HARUS dianggap sebagai rujukan literasi, BUKAN FATWA. Selalu ingatkan pengguna bahwa untuk keputusan hukum akhir dan bimbingan mendalam, mereka harus merujuk kepada ulama dan ahli ilmu agama yang kompeten.
 
             **RIWAYAT PERCAKAPAN SEBELUMNYA (UNTUK KONTEKS):**
-            ${(history || []).map(h => `${h.role}: ${h.text}`).join('\n')}
+            ${contextHistory.map(h => `${h.role === 'user' ? 'Bosku' : 'Saya'}: ${h.text}`).join('\n')}
             `;
         } else if (mode === 'doctor') {
             systemPrompt = `
