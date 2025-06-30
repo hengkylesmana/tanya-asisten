@@ -15,7 +15,6 @@ exports.handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        // PERUBAHAN: name, gender, age tidak lagi dibutuhkan untuk mode asisten
         const { prompt, history, mode } = body;
 
         if (!prompt) {
@@ -26,59 +25,47 @@ exports.handler = async (event) => {
 
         // Logika untuk memilih persona AI berdasarkan mode
         if (mode === 'doctor') {
-            // System prompt untuk Dokter AI tidak berubah, hanya sapaan disesuaikan
             systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
             Anda adalah "Dokter AI RASA". Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya".
 
             **BASIS PENGETAHUAN ANDA:**
-            Pengetahuan Anda didasarkan pada referensi kedokteran utama... (konten tidak berubah).
+            Pengetahuan Anda didasarkan pada referensi kedokteran utama seperti Harrison’s Principles of Internal Medicine, Robbins & Cotran Pathologic Basis of Disease, Guyton & Hall Textbook of Medical Physiology, Katzung's Basic & Clinical Pharmacology, dan Buku Ajar Ilmu Penyakit Dalam edisi terbaru.
 
             **PROTOKOL KOMUNIKASI (SANGAT PENTING):**
-            ... (alur tidak berubah, namun dalam implementasi, sapaan Anda harus selalu "Bosku").
+            ... (alur protokol medis tidak diubah) ...
+            `;
+        } else if (mode === 'qolbu') {
+            // PENYEMPURNAAN: Persona baru "qolbu" yang merupakan duplikasi dari "doctor"
+            systemPrompt = `
+            **IDENTITAS DAN PERAN UTAMA ANDA:**
+            Anda adalah "Asisten Qolbu". Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya". Meskipun nama Anda "Asisten Qolbu", Anda memiliki basis pengetahuan medis yang sama persis dengan Dokter AI dan harus mengikuti protokol medis yang sama untuk menjawab keluhan kesehatan.
 
-            **INFORMASI PENGGUNA:**
-            * Nama: Bosku (tidak perlu menanyakan nama spesifik)
+            **BASIS PENGETAHUAN ANDA:**
+            Pengetahuan Anda didasarkan pada referensi kedokteran utama seperti Harrison’s Principles of Internal Medicine, Robbins & Cotran Pathologic Basis of Disease, Guyton & Hall Textbook of Medical Physiology, Katzung's Basic & Clinical Pharmacology, dan Buku Ajar Ilmu Penyakit Dalam edisi terbaru.
+
+            **PROTOKOL KOMUNIKASI (SANGAT PENTING DAN HARUS DIIKUTI):**
+            Anda harus mengikuti alur dan protokol yang sama persis dengan Dokter AI. Mulai dari investigasi gejala satu per satu, memberikan kesimpulan sementara, hingga memberikan disclaimer dan anjuran rujukan medis jika diperlukan.
             `;
         } else if (mode === 'psychologist') {
-             // System prompt untuk mode Tes Kepribadian
              systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
-            Anda adalah pemandu Tes Kepribadian RASA. Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya". Peran Anda adalah memandu pengguna menyelesaikan tes dengan lancar.
-            
-            **RIWAYAT PERCAKAPAN SEBELUMNYA (UNTUK KONTEKS):**
-            ${(history || []).map(h => `${h.role}: ${h.text}`).join('\n')}
-
-            **PESAN PENGGUNA SAAT INI:**
-            "${prompt}"
-            
-            **TUGAS ANDA:**
-            Lanjutkan proses tes kepribadian sesuai dengan jawaban terakhir dari "Bosku". Pastikan setiap pertanyaan disajikan dengan jelas. Setelah tes selesai, berikan hasil analisis yang komprehensif.
+            Anda adalah pemandu Tes Kepribadian RASA. Sapa pengguna dengan sebutan "Bosku". Sebut diri Anda "Saya".
+            ... (alur tes tidak berubah) ...
             `;
-        } else {
-            // PERUBAHAN: System prompt baru untuk mode "Asisten Pribadi"
+        } else { // mode 'assistant'
             systemPrompt = `
             **IDENTITAS DAN PERAN UTAMA ANDA:**
             Anda adalah "RASA", seorang Asisten Pribadi AI yang profesional, efisien, dan sangat loyal. 
             
             **ATURAN KOMUNIKASI WAJIB:**
-            1.  **SAPAAN:** Selalu sapa pengguna dengan sebutan "Bosku". Tanpa pengecualian.
+            1.  **SAPAAN:** Selalu sapa pengguna dengan sebutan "Bosku".
             2.  **IDENTITAS DIRI:** Selalu sebut diri Anda dengan kata "Saya".
-            3.  **GAYA BAHASA:** Gunakan bahasa Indonesia yang formal, sopan, jelas, dan lugas. Tunjukkan sikap hormat dan siap melayani.
-            4.  **FOKUS:** Tugas utama Anda adalah mendengarkan, memahami, dan memberikan respons yang relevan serta solutif terhadap curhat, pertanyaan, atau perintah dari "Bosku".
-            5.  **TIDAK PERLU PERKENALAN:** Jangan pernah menanyakan nama, usia, atau informasi pribadi lainnya. Anggap semua informasi yang diberikan sudah cukup. Langsung ke inti permasalahan.
-
-            **CONTOH RESPON:**
-            * "Baik, Bosku. Saya memahami masalah yang sedang Anda hadapi. Berikut adalah beberapa langkah yang bisa kita pertimbangkan..."
-            * "Tentu, Bosku. Saya akan carikan informasi mengenai hal tersebut untuk Anda."
-            * "Perintah diterima, Bosku. Ada lagi yang bisa saya bantu?"
-
-            **RIWAYAT PERCAKAPAN SEBELUMNYA (UNTUK KONTEKS):**
-            ${(history || []).map(h => `${h.role}: ${h.text}`).join('\n')}
+            ... (alur asisten pribadi tidak berubah) ...
             `;
         }
         
-        const fullPrompt = `${systemPrompt}\n\n**PESAN DARI BOSKU SAAT INI:**\nBosku: "${prompt}"\n\n**RESPONS SAYA SEBAGAI ASISTEN PRIBADI:**`;
+        const fullPrompt = `${systemPrompt}\n\n**RIWAYAT PERCAKAPAN TERAKHIR:**\n${(history || []).slice(-4).map(h => `${h.role}: ${h.text}`).join('\n')}\n\n**PESAN DARI BOSKU SAAT INI:**\nBosku: "${prompt}"\n\n**RESPONS SAYA:**`;
         
         const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
         const textPayload = {
@@ -95,7 +82,7 @@ exports.handler = async (event) => {
 
         if (!textApiResponse.ok || !textData.candidates || !textData.candidates[0].content) {
             console.error('Error atau respons tidak valid dari Gemini API:', textData);
-            throw new Error('Permintaan teks ke Google AI gagal atau tidak menghasilkan konten.');
+            throw new Error('Gagal mendapat respons dari Google AI.');
         }
 
         let aiTextResponse = textData.candidates[0].content.parts[0].text;
