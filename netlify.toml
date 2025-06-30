@@ -1,7 +1,9 @@
 [build]
+  # BARIS INI MEMBERITAHU NETLIFY UNTUK MENCARI FILE WEBSITE DI DALAM FOLDER "public"
+  publish = "public"
   functions = "netlify/functions"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/chat/:splat"
+  to = "/.netlify/functions/:splat" # Sedikit perbaikan path untuk kecocokan yang lebih baik
   status = 200
