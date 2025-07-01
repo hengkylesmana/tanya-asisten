@@ -454,11 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- AWAL PERUBAHAN ---
-    // Fungsi simpleMarkdownToHTML disempurnakan untuk mengubah URL menjadi link
     function simpleMarkdownToHTML(text) {
-        // Regex untuk mendeteksi URL
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        // Regex untuk mendeteksi link format Markdown: [teks](url)
+        const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
         
         let html = text
             .replace(/\[ARAB\](.*?)\[\/ARAB\]/g, '<span class="arabic-text" dir="rtl">$1</span>')
@@ -466,8 +464,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/_(.*?)_/g, '<i>$1</i>')
             .replace(/###\s*(.*)/g, '<h3>$1</h3>')
             .replace(/---\n/g, '<hr>')
-            // Mengubah URL menjadi tag <a> yang bisa diklik
-            .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
+            // Mengubah format [teks](url) menjadi tag <a> yang bisa diklik
+            .replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
 
         const lines = html.split('\n');
         let inList = false;
@@ -492,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
     }
-    // --- AKHIR PERUBAHAN ---
 
     function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
