@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioContext = null;
     let currentMode = 'assistant';
 
-    // --- PENYEMPURNAAN: State untuk Tes Kepribadian ---
+    // State untuk Tes Kepribadian
     let isTesting = false;
     let currentTestType = null; // 'stifin', 'mbti', atau 'selection'
     let testData = {};
     let testScores = {};
     let currentTestQuestionIndex = 0;
 
-    // --- PENYEMPURNAAN: Basis Data Kecerdasan Tes dari "Teman Curhat RASA" ---
+    // Basis Data Kecerdasan Tes
     const fullTestData = {
         stifin: {
             questions: [
@@ -164,11 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
             qolbuInfoBox.style.display = 'block';
             welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
         } else if (mode.isTest) {
-            // --- PENYEMPURNAAN: Memulai alur tes baru ---
             headerTitle.textContent = "Tes Kepribadian";
             headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
             initiateTestSelection();
-            return; // Hentikan eksekusi lebih lanjut karena alur tes dimulai
+            return; 
         } else if (mode.isDoctor) {
             headerTitle.textContent = "Tanya ke Dokter AI";
             headerSubtitle.textContent = "Saya siap membantu, Bosku";
@@ -185,11 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonVisibility();
     }
     
-    // --- PENYEMPURNAAN: Fungsi-fungsi baru untuk alur tes ---
-
     function initiateTestSelection() {
         isTesting = true;
-        currentTestType = 'selection'; // Mode awal adalah memilih jenis tes
+        currentTestType = 'selection'; 
         const introMessage = `Selamat datang di Tes Kepribadian dan Potensi Diri, Bosku.\n\nSaya menawarkan dua pendekatan untuk membantu Anda lebih mengenal diri:\n- **Pendekatan STIFIn:** Berbasis konsep kecerdasan genetik untuk menemukan "sistem operasi" otak Anda yang dominan.\n- **Pendekatan MBTI:** Salah satu tes kepribadian paling populer di dunia untuk mengidentifikasi preferensi Anda.\n\n---\n\n_Disclaimer: Tes ini adalah pengantar untuk mengenali potensi diri. Untuk hasil yang lebih akurat, disarankan untuk mengikuti tes di Layanan Psikologi Profesional._\n\nSekarang, silakan pilih pendekatan yang ingin Anda gunakan:\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
         
         displayMessage(introMessage, 'ai');
@@ -201,17 +198,16 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTestType = type;
         const originalTestData = (type === 'stifin') ? fullTestData.stifin : fullTestData.mbti;
 
-        // Ambil sejumlah pertanyaan secara acak untuk variasi
         let questionsToAsk = [];
         if (type === 'stifin') {
             const mainQuestions = originalTestData.questions.filter(q => !q.isDriveQuestion);
             const driveQuestion = originalTestData.questions.find(q => q.isDriveQuestion);
             const shuffledMain = mainQuestions.sort(() => 0.5 - Math.random());
-            questionsToAsk = shuffledMain.slice(0, 5); // Ambil 5 pertanyaan utama
+            questionsToAsk = shuffledMain.slice(0, 5); 
             if (driveQuestion) questionsToAsk.push(driveQuestion);
         } else { 
             const shuffled = originalTestData.questions.sort(() => 0.5 - Math.random());
-            questionsToAsk = shuffled.slice(0, 6); // Ambil 6 pertanyaan MBTI
+            questionsToAsk = shuffled.slice(0, 6); 
         }
 
         testData = {
@@ -250,9 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTestType === 'stifin') {
             const selectedOption = q.options.find(opt => opt.text === choice);
             if (!selectedOption) return;
-            // Jika ini pertanyaan terakhir (drive question), langsung hitung hasil
             if (q.isDriveQuestion) {
-                calculateAndDisplayResult(selectedOption.type); // Kirim 'i' atau 'e'
+                calculateAndDisplayResult(selectedOption.type); 
                 return;
             }
             testScores[selectedOption.type] = (testScores[selectedOption.type] || 0) + 1;
@@ -301,8 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateButtonVisibility();
     }
-
-    // --- Fungsi Inti Lainnya (Sebagian Besar Tidak Berubah) ---
     
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
@@ -314,21 +307,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleSendMessageWithText(text) {
-        // Cek apakah sedang dalam mode pemilihan tes
         if (isTesting && currentTestType === 'selection') {
             displayMessage(text, 'user');
             const type = text.toLowerCase().includes('stifin') ? 'stifin' : 'mbti';
             startActualTest(type);
             return;
         }
-        // Cek apakah sedang dalam proses menjawab tes
         if (isTesting) {
             displayMessage(text, 'user');
             processTestAnswer(text);
             return;
         }
 
-        // Jika bukan mode tes, kirim pesan biasa
         conversationHistory.push({ role: 'user', text: text });
         displayMessage(text, 'user');
         updateButtonVisibility();
@@ -366,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // --- AWAL PERUBAHAN ---
+    // Fungsi speakAsync disempurnakan untuk mengubah pelafalan "AI"
     function speakAsync(text) {
         return new Promise((resolve) => {
             if (!('speechSynthesis' in window)) {
@@ -374,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             window.speechSynthesis.cancel();
             
-            // Jangan bicara saat tes untuk alur yang lebih cepat
             if (isTesting) {
                 resolve();
                 return;
@@ -392,7 +383,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         utteranceQueue.push(utterance);
                     }
                 } else {
-                    const cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, '');
+                    let cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, '');
+                    
+                    // Mengganti "AI" dengan "E-Ai" hanya untuk keperluan suara
+                    cleanPart = cleanPart.replace(/\bAI\b/g, 'E-Ai');
+
                     if (cleanPart.trim()) {
                         const utterance = new SpeechSynthesisUtterance(cleanPart);
                         utterance.lang = 'id-ID';
@@ -419,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // --- AKHIR PERUBAHAN ---
 
     function updateButtonVisibility() {
         const isTyping = userInput.value.length > 0;
@@ -446,14 +442,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (abortController) abortController.abort();
         window.speechSynthesis.cancel();
         if (recognition && isRecording) recognition.stop();
-        isTesting = false; // Batalkan juga mode tes
+        isTesting = false; 
         statusDiv.textContent = "Dibatalkan.";
         setTimeout(() => { statusDiv.textContent = ""; }, 2000);
         updateButtonVisibility();
     }
 
     function toggleMainRecording() {
-        if (isTesting) return; // Nonaktifkan suara saat tes
+        if (isTesting) return; 
         if (isRecording) {
             recognition.stop();
         } else {
@@ -494,13 +490,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
     }
 
-    // --- AWAL PERUBAHAN ---
-    // Fungsi displayMessage dimodifikasi untuk mengenali tag [TOMBOL:...]
     function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
 
-        // Regex diperbarui untuk mencakup 'PILIHAN' dan 'TOMBOL'
         const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
         const buttons = [...message.matchAll(buttonRegex)];
         const cleanMessage = message.replace(buttonRegex, '').trim();
@@ -511,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'choice-container';
             buttons.forEach(match => {
-                const buttonType = match[1]; // PILIHAN atau TOMBOL
+                const buttonType = match[1]; 
                 const options = match[2].split('|');
                 
                 options.forEach(optionText => {
@@ -519,7 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.className = 'choice-button';
                     button.textContent = optionText.trim();
                     button.onclick = () => {
-                        // Menonaktifkan semua tombol di dalam kontainer yang sama
                         choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
                         button.classList.add('selected');
                         handleSendMessageWithText(optionText.trim());
@@ -533,7 +525,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-    // --- AKHIR PERUBAHAN ---
     
     init();
 });
