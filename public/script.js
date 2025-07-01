@@ -129,12 +129,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // --- AWAL PERUBAHAN ---
+        // Logika event handler untuk SpeechRecognition diubah
         if (recognition) {
-            recognition.onresult = (event) => { userInput.value = event.results[0][0].transcript; updateButtonVisibility(); handleSendMessage(); };
-            recognition.onstart = () => { isRecording = true; voiceBtn.classList.add('recording'); statusDiv.textContent = "Saya mendengarkan..."; updateButtonVisibility(); };
-            recognition.onend = () => { isRecording = false; voiceBtn.classList.remove('recording'); statusDiv.textContent = ""; updateButtonVisibility(); };
-            recognition.onerror = (event) => { console.error("Speech recognition error", event.error); statusDiv.textContent = "Maaf, saya tidak bisa mendengar."; };
+            // 'onresult' hanya akan mengisi kotak input dengan hasil suara.
+            recognition.onresult = (event) => {
+                userInput.value = event.results[0][0].transcript;
+                updateButtonVisibility(); // Perbarui tampilan tombol kirim
+            };
+
+            recognition.onstart = () => {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                statusDiv.textContent = "Saya mendengarkan...";
+                updateButtonVisibility();
+            };
+
+            // 'onend' akan secara otomatis mengirim pesan jika ada teks di kotak input.
+            recognition.onend = () => {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusDiv.textContent = "";
+                updateButtonVisibility();
+                // Kirim pesan secara otomatis jika ada hasil dari rekaman suara
+                if (userInput.value.trim()) {
+                    handleSendMessage();
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
+            };
         }
+        // --- AKHIR PERUBAHAN ---
     }
     
     function initializeApp(mode = {}) {
@@ -455,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function simpleMarkdownToHTML(text) {
-        // Regex untuk mendeteksi link format Markdown: [teks](url)
         const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
         
         let html = text
@@ -464,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/_(.*?)_/g, '<i>$1</i>')
             .replace(/###\s*(.*)/g, '<h3>$1</h3>')
             .replace(/---\n/g, '<hr>')
-            // Mengubah format [teks](url) menjadi tag <a> yang bisa diklik
             .replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
 
         const lines = html.split('\n');
