@@ -13,13 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const startTestBtn = document.getElementById('start-test-btn');
     const startDoctorBtn = document.getElementById('start-doctor-btn');
     const header = document.querySelector('header');
-    const headerTitle = document.getElementById('header-title');
-    const headerSubtitle = document.getElementById('header-subtitle');
-    
-    const qolbuInfoBox = document.getElementById('qolbu-info-box');
-    const qolbuInfoClose = document.getElementById('qolbu-info-close');
-    const doctorInfoBox = document.getElementById('doctor-info-box');
-    const doctorInfoClose = document.getElementById('doctor-info-close');
     
     // State aplikasi
     let conversationHistory = []; 
@@ -51,9 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startTestBtn.addEventListener('click', () => initializeApp({ isTest: true }));
         startDoctorBtn.addEventListener('click', () => initializeApp({ isDoctor: true }));
         
-        qolbuInfoClose.addEventListener('click', () => { qolbuInfoBox.style.display = 'none'; });
-        doctorInfoClose.addEventListener('click', () => { doctorInfoBox.style.display = 'none'; });
-
         header.addEventListener('click', () => window.location.reload());
         sendBtn.addEventListener('click', handleSendMessage);
         voiceBtn.addEventListener('click', toggleMainRecording);
@@ -73,28 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (recognition) {
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                userInput.value = transcript;
-                updateButtonVisibility();
-                handleSendMessage();
-            };
-            recognition.onstart = () => {
-                isRecording = true;
-                voiceBtn.classList.add('recording');
-                statusDiv.textContent = "Saya mendengarkan...";
-                updateButtonVisibility();
-            };
-            recognition.onend = () => {
-                isRecording = false;
-                voiceBtn.classList.remove('recording');
-                statusDiv.textContent = "";
-                updateButtonVisibility();
-            };
-            recognition.onerror = (event) => {
-                console.error("Speech recognition error", event.error);
-                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
-            };
+            recognition.onresult = (event) => { userInput.value = event.results[0][0].transcript; updateButtonVisibility(); handleSendMessage(); };
+            recognition.onstart = () => { isRecording = true; voiceBtn.classList.add('recording'); statusDiv.textContent = "Saya mendengarkan..."; updateButtonVisibility(); };
+            recognition.onend = () => { isRecording = false; voiceBtn.classList.remove('recording'); statusDiv.textContent = ""; updateButtonVisibility(); };
+            recognition.onerror = (event) => { console.error("Speech recognition error", event.error); statusDiv.textContent = "Maaf, saya tidak bisa mendengar."; };
         }
     }
     
@@ -109,29 +81,38 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.innerHTML = '';
         conversationHistory = [];
         
-        doctorInfoBox.style.display = 'none';
-        qolbuInfoBox.style.display = 'none';
+        document.getElementById('qolbu-info-box').style.display = 'none';
+        document.getElementById('doctor-info-box').style.display = 'none';
         
+        isTesting = mode.isTest || false;
+        currentMode = mode.isQolbu ? 'qolbu' : (mode.isTest ? 'psychologist' : (mode.isDoctor ? 'doctor' : 'assistant'));
+        
+        const headerTitle = document.getElementById('header-title');
+        const headerSubtitle = document.getElementById('header-subtitle');
+        let welcomeMessage = "";
+
         if (mode.isQolbu) {
-            currentMode = 'qolbu';
             headerTitle.textContent = "Asisten Qolbu";
             headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
-            qolbuInfoBox.style.display = 'block';
-            isTesting = false;
-            const welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
-            displayMessage(welcomeMessage, 'ai');
-            speakAsync(welcomeMessage, true);
-        } else { // All other modes
-            isTesting = mode.isTest || false;
-            currentMode = mode.isTest ? 'psychologist' : (mode.isDoctor ? 'doctor' : 'assistant');
-            headerTitle.textContent = mode.isTest ? "Tes Kepribadian" : (mode.isDoctor ? "Tanya ke Dokter AI" : "Asisten Pribadi");
-            headerSubtitle.textContent = mode.isTest ? "Saya akan memandu Anda, Bosku" : (mode.isDoctor ? "Saya siap membantu, Bosku" : "Siap melayani, Bosku");
-            if(mode.isDoctor) doctorInfoBox.style.display = 'block';
-
-            const welcomeMessage = mode.isTest ? `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]` : (mode.isDoctor ? "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?" : "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?");
-            displayMessage(welcomeMessage, 'ai');
-            speakAsync(welcomeMessage.split('[PILIHAN')[0], true);
+            document.getElementById('qolbu-info-box').style.display = 'block';
+            welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
+        } else if (mode.isTest) {
+            headerTitle.textContent = "Tes Kepribadian";
+            headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
+            welcomeMessage = `Selamat datang di Tes Kepribadian, Bosku.\n\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
+        } else if (mode.isDoctor) {
+            headerTitle.textContent = "Tanya ke Dokter AI";
+            headerSubtitle.textContent = "Saya siap membantu, Bosku";
+            document.getElementById('doctor-info-box').style.display = 'block';
+            welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
+        } else {
+            headerTitle.textContent = "Asisten Pribadi";
+            headerSubtitle.textContent = "Siap melayani, Bosku";
+            welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?";
         }
+        
+        displayMessage(welcomeMessage, 'ai');
+        speakAsync(welcomeMessage);
         updateButtonVisibility();
     }
     
@@ -139,14 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isRecording || isTesting) return;
         const userText = userInput.value.trim();
         if (!userText) return;
-
-        conversationHistory.push({ role: 'user', text: userText });
-        displayMessage(userText, 'user');
+        handleSendMessageWithText(userText);
         userInput.value = '';
         userInput.style.height = 'auto';
+    }
+
+    async function handleSendMessageWithText(text) {
+        conversationHistory.push({ role: 'user', text: text });
+        displayMessage(text, 'user');
         updateButtonVisibility();
-        
-        await getAIResponse(userText);
+        await getAIResponse(text);
     }
     
     async function getAIResponse(prompt) {
@@ -167,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (responseText) {
                 conversationHistory.push({ role: 'ai', text: responseText });
                 displayMessage(responseText, 'ai');
-                await speakAsync(responseText, true);
+                await speakAsync(responseText);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
@@ -180,39 +163,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function speakAsync(text, isAIResponse = false) {
+    function speakAsync(text) {
         return new Promise((resolve) => {
             if (!('speechSynthesis' in window)) {
                 resolve();
                 return;
             }
+            window.speechSynthesis.cancel();
 
-            const doSpeak = () => {
-                window.speechSynthesis.cancel();
-                
-                const textForSpeech = text.replace(/\[[^\]]+\]/g, ''); // Hapus semua tag [TAG:...]
-                
-                const utterance = new SpeechSynthesisUtterance(textForSpeech);
-                utterance.lang = 'id-ID';
-                utterance.rate = 0.95;
-                utterance.pitch = 1;
+            const utteranceQueue = [];
+            const parts = text.split(/(\[ARAB\].*?\[\/ARAB\])/g);
 
-                const voices = window.speechSynthesis.getVoices();
-                let indonesianVoice = voices.find(v => v.lang === 'id-ID');
-                if (indonesianVoice) utterance.voice = indonesianVoice;
+            parts.forEach(part => {
+                if (part.startsWith('[ARAB]')) {
+                    const arabicText = part.substring(6, part.length - 7);
+                    if (arabicText.trim()) {
+                        const utterance = new SpeechSynthesisUtterance(arabicText);
+                        utterance.lang = 'ar-SA';
+                        utteranceQueue.push(utterance);
+                    }
+                } else {
+                    const cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#]/g, '');
+                    if (cleanPart.trim()) {
+                        const utterance = new SpeechSynthesisUtterance(cleanPart);
+                        utterance.lang = 'id-ID';
+                        utteranceQueue.push(utterance);
+                    }
+                }
+            });
 
-                utterance.onend = () => resolve();
-                utterance.onerror = (e) => {
-                    console.error("Terjadi kesalahan pada sintesis suara:", e);
-                    resolve(e);
+            if (utteranceQueue.length === 0) {
+                resolve();
+                return;
+            }
+
+            let currentIndex = 0;
+            const speakNext = () => {
+                if (currentIndex >= utteranceQueue.length) {
+                    resolve();
+                    return;
+                }
+                const currentUtterance = utteranceQueue[currentIndex];
+                currentUtterance.onend = () => {
+                    currentIndex++;
+                    speakNext();
                 };
-                window.speechSynthesis.speak(utterance);
+                currentUtterance.onerror = (e) => {
+                    console.error("Speech synthesis error:", e);
+                    currentIndex++;
+                    speakNext();
+                };
+                window.speechSynthesis.speak(currentUtterance);
             };
-
+            
             if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = doSpeak;
+                window.speechSynthesis.onvoiceschanged = speakNext;
             } else {
-                doSpeak();
+                speakNext();
             }
         });
     }
@@ -255,66 +262,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function simpleMarkdownToHTML(text) {
+        let html = text
+            .replace(/\[ARAB\](.*?)\[\/ARAB\]/g, '<span class="arabic-text" dir="rtl">$1</span>')
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+            .replace(/_(.*?)_/g, '<i>$1</i>');
+
+        const lines = html.split('\n');
+        let inList = false;
+        html = lines.map(line => {
+            if (line.trim().startsWith('- ')) {
+                if (!inList) {
+                    inList = true;
+                    return '<ul><li>' + line.trim().substring(2) + '</li>';
+                }
+                return '<li>' + line.trim().substring(2) + '</li>';
+            } else {
+                if (inList) {
+                    inList = false;
+                    return '</ul>' + line;
+                }
+                return line;
+            }
+        }).join('<br>');
+
+        if (inList) {
+            html += '</ul>';
+        }
+        
+        return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
+    }
+
     function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
 
-        let formattedMessage = message.replace(/\n/g, '<br>');
-
-        // Regex untuk semua jenis tombol
-        const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
-        const buttons = [...formattedMessage.matchAll(buttonRegex)];
+        const buttonRegex = /\[(TOMBOL):(.*?)\]/g;
+        const buttons = [...message.matchAll(buttonRegex)];
+        const cleanMessage = message.replace(buttonRegex, '').trim();
         
+        messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
+
         if (buttons.length > 0) {
-            formattedMessage = formattedMessage.replace(buttonRegex, '').trim();
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'choice-container';
-            
             buttons.forEach(match => {
-                const type = match[1]; // PILIHAN atau TOMBOL
-                const text = match[2]; // Isi dari tombol
-                
-                if (type === 'PILIHAN') {
-                    text.split('|').forEach(choice => {
-                        const button = document.createElement('button');
-                        button.className = 'choice-button';
-                        button.textContent = choice.trim();
-                        button.onclick = () => {
-                            choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
-                            button.classList.add('selected');
-                            displayMessage(choice.trim(), 'user');
-                            getAIResponse(choice.trim());
-                        };
-                        choiceContainer.appendChild(button);
-                    });
-                } else if (type === 'TOMBOL') {
-                    const button = document.createElement('button');
-                    button.className = 'choice-button';
-                    button.textContent = text.trim();
-                    button.onclick = () => {
-                        button.disabled = true;
-                        button.classList.add('selected');
-                        // Kirim prompt spesifik untuk meminta penjelasan lebih lanjut
-                        handleSendMessageWithText(text.trim());
-                    };
-                    choiceContainer.appendChild(button);
-                }
+                const text = match[2];
+                const button = document.createElement('button');
+                button.className = 'choice-button';
+                button.textContent = text.trim();
+                button.onclick = () => {
+                    choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
+                    button.classList.add('selected');
+                    handleSendMessageWithText(text.trim());
+                };
+                choiceContainer.appendChild(button);
             });
-            messageElement.innerHTML = formattedMessage;
             messageElement.appendChild(choiceContainer);
-        } else {
-            messageElement.innerHTML = formattedMessage;
         }
 
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    // Fungsi helper untuk mengirim pesan secara internal
-    function handleSendMessageWithText(text) {
-        conversationHistory.push({ role: 'user', text: text });
-        displayMessage(text, 'user');
-        getAIResponse(text);
     }
     
     init();
