@@ -494,11 +494,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
     }
 
+    // --- AWAL PERUBAHAN ---
+    // Fungsi displayMessage dimodifikasi untuk mengenali tag [TOMBOL:...]
     function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
 
-        const buttonRegex = /\[(PILIHAN):(.*?)\]/g;
+        // Regex diperbarui untuk mencakup 'PILIHAN' dan 'TOMBOL'
+        const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
         const buttons = [...message.matchAll(buttonRegex)];
         const cleanMessage = message.replace(buttonRegex, '').trim();
         
@@ -508,12 +511,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'choice-container';
             buttons.forEach(match => {
+                const buttonType = match[1]; // PILIHAN atau TOMBOL
                 const options = match[2].split('|');
+                
                 options.forEach(optionText => {
                     const button = document.createElement('button');
                     button.className = 'choice-button';
                     button.textContent = optionText.trim();
                     button.onclick = () => {
+                        // Menonaktifkan semua tombol di dalam kontainer yang sama
                         choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
                         button.classList.add('selected');
                         handleSendMessageWithText(optionText.trim());
@@ -527,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+    // --- AKHIR PERUBAHAN ---
     
     init();
 });
