@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startDoctorBtn = document.getElementById('start-doctor-btn');
     const header = document.querySelector('header');
     
-    // PERBAIKAN: Mengambil elemen info box dan tombol tutupnya
+    // Mengambil elemen info box dan tombol tutupnya
     const qolbuInfoBox = document.getElementById('qolbu-info-box');
     const qolbuInfoClose = document.getElementById('qolbu-info-close');
     const doctorInfoBox = document.getElementById('doctor-info-box');
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startTestBtn.addEventListener('click', () => initializeApp({ isTest: true }));
         startDoctorBtn.addEventListener('click', () => initializeApp({ isDoctor: true }));
         
-        // PERBAIKAN: Menambahkan kembali event listener untuk tombol tutup
+        // Memastikan event listener untuk tombol tutup berfungsi
         qolbuInfoClose.addEventListener('click', () => { qolbuInfoBox.style.display = 'none'; });
         doctorInfoClose.addEventListener('click', () => { doctorInfoBox.style.display = 'none'; });
 
