@@ -24,10 +24,16 @@ exports.handler = async (event) => {
         let systemPrompt;
         const contextHistory = (history || []).slice(0, -1);
 
+        // --- AWAL PERUBAHAN ---
+        // Menambahkan instruksi validasi link ke basePerspective
         const basePerspective = `
             **PERSPEKTIF KOMUNIKASI (WAJIB):**
             Anda adalah Asisten Pribadi AI yang profesional dan setia. Pengguna adalah atasan Anda, yang harus selalu Anda sapa dengan hormat menggunakan sebutan "Bosku". Gunakan gaya bahasa yang sopan, membantu, dan efisien, layaknya seorang asisten kepada atasannya. Sebut diri Anda "Saya".
+
+            **VALIDASI TAUTAN (WAJIB):**
+            Jika Anda memberikan tautan/link internet (URL), Anda harus berusaha memastikan tautan tersebut valid, aktif, dan relevan dengan konteks percakapan. Jangan memberikan tautan yang rusak atau mengarah ke halaman '404 Not Found'.
         `;
+        // --- AKHIR PERUBAHAN ---
 
         if (mode === 'qolbu') {
             systemPrompt = `
@@ -51,7 +57,6 @@ exports.handler = async (event) => {
             Gunakan format yang rapi (**bold**, \`-\` untuk list). Untuk teks Arab dan lafaz "Allah", bungkus dengan tag [ARAB]...[/ARAB] untuk diproses frontend. Jika jawaban Anda bersifat parsial dan bisa dilanjutkan, selalu akhiri jawaban dengan tag [TOMBOL:Jelaskan lebih Lengkap].
             `;
         
-        // --- AWAL PENYEMPURNAAN DOKTER AI ---
         } else if (mode === 'doctor') {
             systemPrompt = `
             ${basePerspective}
@@ -82,7 +87,6 @@ exports.handler = async (event) => {
 
             **FOKUS:** Selama sesi diagnosa, tetaplah fokus pada alur ini. Jangan keluar dari topik atau menawarkan hal lain sampai sesi dianggap selesai atau Bosku menghentikannya.
             `;
-        // --- AKHIR PENYEMPURNAAN DOKTER AI ---
 
         } else if (mode === 'psychologist') {
              systemPrompt = `
