@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioContext = null;
     let currentMode = 'assistant';
     let pendingImage = null; 
+    let typingIndicator = null; // Variabel untuk melacak indikator
 
     // State untuk Tes Kepribadian
     let isTesting = false;
@@ -175,7 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function getAIResponse(prompt, image = null) {
         abortController = new AbortController();
-        statusDiv.textContent = "Saya sedang berpikir...";
+        statusDiv.textContent = ""; // Hapus status teks lama
+        showTypingIndicator(); // Tampilkan indikator visual di chat
         updateButtonVisibility();
 
         try {
@@ -184,19 +186,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ prompt, history: conversationHistory, mode: currentMode, image: image }),
                 signal: abortController.signal
             });
+            
+            hideTypingIndicator(); // Sembunyikan indikator setelah mendapat respons
+
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
             
-            // PENYEMPURNAAN: Menangani respons yang mungkin berisi gambar
             const result = await apiResponse.json();
             const responseText = result.aiText || `Maaf, Bosku. Bisa diulangi lagi?`;
             
             if (responseText) {
                 conversationHistory.push({ role: 'ai', text: responseText });
-                // Teruskan gambar yang dihasilkan (jika ada) ke fungsi display
                 displayMessage(responseText, 'ai', result.generatedImage);
                 await speakAsync(responseText);
             }
         } catch (error) {
+            hideTypingIndicator(); // Pastikan indikator juga hilang jika ada error
             if (error.name !== 'AbortError') {
                displayMessage(`Maaf, Bosku, ada gangguan koneksi atau respons dibatalkan.`, 'ai-system');
             }
@@ -286,8 +290,31 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // PENYEMPURNAAN: Fungsi displayMessage sekarang bisa menerima URL gambar
+    function showTypingIndicator() {
+        if (typingIndicator) return; // Jangan duplikat indikator
+
+        typingIndicator = document.createElement('div');
+        typingIndicator.classList.add('chat-message', 'ai-message');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        `;
+        chatContainer.appendChild(typingIndicator);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        if (typingIndicator) {
+            typingIndicator.remove();
+            typingIndicator = null;
+        }
+    }
+
     function displayMessage(message, sender, imageUrl = null) {
+        hideTypingIndicator(); // Pastikan indikator selalu hilang saat pesan baru (termasuk pesan error) ditampilkan
+
         if (sender === 'user') {
             displayUserMessage(message, imageUrl);
             return;
@@ -302,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
 
-        // Tambahkan gambar yang dihasilkan AI jika ada
         if (imageUrl) {
             const imgElement = document.createElement('img');
             imgElement.src = imageUrl;
