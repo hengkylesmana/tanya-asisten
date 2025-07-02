@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function getAIResponse(prompt, image = null) {
         abortController = new AbortController();
-        statusDiv.textContent = ""; // Hapus status teks lama
-        showTypingIndicator(); // Tampilkan indikator visual di chat
+        statusDiv.textContent = ""; 
+        showTypingIndicator(); 
         updateButtonVisibility();
 
         try {
@@ -187,20 +187,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 signal: abortController.signal
             });
             
-            hideTypingIndicator(); // Sembunyikan indikator setelah mendapat respons
+            hideTypingIndicator(); 
 
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
             
             const result = await apiResponse.json();
-            const responseText = result.aiText || `Maaf, Bosku. Bisa diulangi lagi?`;
+            const responseText = result.aiText;
             
-            if (responseText) {
-                conversationHistory.push({ role: 'ai', text: responseText });
+            // PERBAIKAN: Tampilkan gelembung chat jika ada teks ATAU ada gambar.
+            if (responseText || result.generatedImage) {
+                const textToSave = responseText || "Gambar yang dihasilkan AI";
+                conversationHistory.push({ role: 'ai', text: textToSave });
                 displayMessage(responseText, 'ai', result.generatedImage);
-                await speakAsync(responseText);
+                if(responseText) await speakAsync(responseText);
             }
         } catch (error) {
-            hideTypingIndicator(); // Pastikan indikator juga hilang jika ada error
+            hideTypingIndicator(); 
             if (error.name !== 'AbortError') {
                displayMessage(`Maaf, Bosku, ada gangguan koneksi atau respons dibatalkan.`, 'ai-system');
             }
@@ -260,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function simpleMarkdownToHTML(text) {
+        if (!text) return ''; // Tambahkan penjaga untuk teks null atau undefined
         const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
         
         let html = text
@@ -291,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showTypingIndicator() {
-        if (typingIndicator) return; // Jangan duplikat indikator
+        if (typingIndicator) return; 
 
         typingIndicator = document.createElement('div');
         typingIndicator.classList.add('chat-message', 'ai-message');
@@ -313,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayMessage(message, sender, imageUrl = null) {
-        hideTypingIndicator(); // Pastikan indikator selalu hilang saat pesan baru (termasuk pesan error) ditampilkan
+        hideTypingIndicator(); 
 
         if (sender === 'user') {
             displayUserMessage(message, imageUrl);
@@ -323,19 +326,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
 
+        const hasText = message && message.trim().length > 0;
+        const hasImage = imageUrl && imageUrl.startsWith('data:image');
+
+        // Jika tidak ada konten sama sekali, tampilkan pesan error/debug alih-alih tidak menampilkan apa-apa.
+        if (!hasText && !hasImage) {
+            messageElement.innerHTML = "<em>(Menerima respons kosong dari server. Mungkin ada gangguan.)</em>";
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return;
+        }
+
         const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
-        const buttons = [...message.matchAll(buttonRegex)];
-        const cleanMessage = message.replace(buttonRegex, '').trim();
+        const buttons = message ? [...message.matchAll(buttonRegex)] : [];
+        const cleanMessage = message ? message.replace(buttonRegex, '').trim() : '';
         
         messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
 
-        if (imageUrl) {
+        if (hasImage) {
             const imgElement = document.createElement('img');
             imgElement.src = imageUrl;
             imgElement.alt = "Gambar yang dihasilkan oleh AI";
             imgElement.className = "chat-image";
             imgElement.style.marginTop = "10px";
             imgElement.onclick = () => window.open(imageUrl, '_blank');
+            // Penanganan error penting untuk debugging
+            imgElement.onerror = () => {
+                const errorP = document.createElement('p');
+                errorP.style.color = 'red';
+                errorP.style.fontSize = '0.8em';
+                errorP.style.marginTop = '10px';
+                errorP.style.border = '1px solid red';
+                errorP.style.padding = '8px';
+                errorP.textContent = "[DEBUG: Gambar diterima dari backend, tetapi gagal ditampilkan. Ini mungkin karena kebijakan keamanan browser.]";
+                // Ganti elemen gambar yang rusak dengan pesan error
+                if (messageElement.contains(imgElement)) {
+                    messageElement.replaceChild(errorP, imgElement);
+                }
+            };
             messageElement.appendChild(imgElement);
         }
 
