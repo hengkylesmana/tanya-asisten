@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const startDoctorBtn = document.getElementById('start-doctor-btn');
     const header = document.querySelector('header');
     
-    // PENYEMPURNAAN: Elemen untuk fungsionalitas upload gambar
     const uploadBtn = document.getElementById('upload-btn');
     const imageInput = document.getElementById('image-input');
     const imagePreviewContainer = document.getElementById('image-preview-container');
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRecording = false;
     let audioContext = null;
     let currentMode = 'assistant';
-    let pendingImage = null; // PENYEMPURNAAN: Menyimpan data gambar yang akan dikirim
+    let pendingImage = null; 
 
     // State untuk Tes Kepribadian
     let isTesting = false;
@@ -72,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceBtn.addEventListener('click', toggleMainRecording);
         endChatBtn.addEventListener('click', handleCancelResponse);
         
-        // PENYEMPURNAAN: Event listener untuk tombol dan input gambar
         uploadBtn.addEventListener('click', () => imageInput.click());
         imageInput.addEventListener('change', handleImageUpload);
 
@@ -110,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessage(welcomeMessage, 'ai'); speakAsync(welcomeMessage); updateButtonVisibility();
     }
     
-    // PENYEMPURNAAN: Fungsi untuk menangani upload gambar
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file || !file.type.startsWith('image/')) return;
@@ -126,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         imageInput.value = ''; // Reset input file
     }
 
-    // PENYEMPURNAAN: Fungsi untuk menampilkan preview gambar
     function displayImagePreview(imageData, fileName) {
         imagePreviewContainer.style.display = 'flex';
         imagePreviewContainer.innerHTML = `
@@ -153,11 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
         
-        // PENYEMPURNAAN: Izinkan pengiriman pesan meski input teks kosong jika ada gambar
         const userText = userInput.value.trim();
         if (!userText && !pendingImage) return;
         
-        // Jika ada gambar tapi tidak ada teks, gunakan teks default
         const promptText = userText || "Tolong jelaskan atau analisis gambar ini, Bosku.";
 
         handleSendMessageWithText(promptText, pendingImage);
@@ -165,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.value = '';
         userInput.style.height = 'auto';
         
-        // Reset preview gambar setelah dikirim
         pendingImage = null;
         imagePreviewContainer.style.display = 'none';
         imagePreviewContainer.innerHTML = '';
@@ -174,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSendMessageWithText(text, image = null) {
         if (isTesting) { /* ... (logika tes tidak diubah) ... */ return; }
         
-        // PENYEMPURNAAN: Menampilkan pesan pengguna dengan gambar jika ada
         displayUserMessage(text, image);
         conversationHistory.push({ role: 'user', text: text });
         updateButtonVisibility();
@@ -187,19 +179,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonVisibility();
 
         try {
-            // PENYEMPURNAAN: Mengirim data gambar ke API
             const apiResponse = await fetch('/api/chat', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt, history: conversationHistory, mode: currentMode, image: image }),
                 signal: abortController.signal
             });
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
+            
+            // PENYEMPURNAAN: Menangani respons yang mungkin berisi gambar
             const result = await apiResponse.json();
             const responseText = result.aiText || `Maaf, Bosku. Bisa diulangi lagi?`;
             
             if (responseText) {
                 conversationHistory.push({ role: 'ai', text: responseText });
-                displayMessage(responseText, 'ai');
+                // Teruskan gambar yang dihasilkan (jika ada) ke fungsi display
+                displayMessage(responseText, 'ai', result.generatedImage);
                 await speakAsync(responseText);
             }
         } catch (error) {
@@ -227,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.disabled = isInputDisabled;
         userInput.placeholder = isTesting ? "Jawab melalui tombol..." : (isRecording ? "Mendengarkan..." : "Tulis pesan untuk saya, Bosku...");
         
-        // PENYEMPURNAAN: Logika visibilitas tombol disesuaikan
         if (isInputDisabled) {
             sendBtn.style.display = 'none';
             voiceBtn.style.display = 'none';
@@ -265,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function simpleMarkdownToHTML(text) {
         const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
         
-        // PENYEMPURNAAN: Menambahkan regex untuk tag gambar dari AI
         let html = text
             .replace(/\[ARAB\](.*?)\[\/ARAB\]/g, '<span class="arabic-text" dir="rtl">$1</span>')
             .replace(/\[GAMBAR:(.*?)\]/g, '<img src="$1" alt="Gambar dari AI" class="chat-image" onclick="window.open(\'$1\', \'_blank\');">')
@@ -275,12 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/---\n/g, '<hr>')
             .replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
 
-        // ... (logika list tidak diubah)
         const lines = html.split('\n'); let inList = false; html = lines.map(line => { let trimmedLine = line.trim(); if (trimmedLine.startsWith('- ')) { if (!inList) { inList = true; return '<ul><li>' + trimmedLine.substring(2) + '</li>'; } return '<li>' + trimmedLine.substring(2) + '</li>'; } else { if (inList) { inList = false; return '</ul>' + line; } return line; } }).join('<br>'); if (inList) html += '</ul>';
         return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
     }
 
-    // PENYEMPURNAAN: Fungsi baru untuk menampilkan pesan pengguna dengan gambar
     function displayUserMessage(text, imageUrl) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', 'user-message');
@@ -296,9 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    function displayMessage(message, sender) {
-        // Jangan tampilkan pesan pengguna lagi karena sudah ditangani oleh displayUserMessage
-        if (sender === 'user') return;
+    // PENYEMPURNAAN: Fungsi displayMessage sekarang bisa menerima URL gambar
+    function displayMessage(message, sender, imageUrl = null) {
+        if (sender === 'user') {
+            displayUserMessage(message, imageUrl);
+            return;
+        }
 
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
@@ -308,6 +301,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const cleanMessage = message.replace(buttonRegex, '').trim();
         
         messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
+
+        // Tambahkan gambar yang dihasilkan AI jika ada
+        if (imageUrl) {
+            const imgElement = document.createElement('img');
+            imgElement.src = imageUrl;
+            imgElement.alt = "Gambar yang dihasilkan oleh AI";
+            imgElement.className = "chat-image";
+            imgElement.style.marginTop = "10px";
+            imgElement.onclick = () => window.open(imageUrl, '_blank');
+            messageElement.appendChild(imgElement);
+        }
 
         if (buttons.length > 0) {
             const choiceContainer = document.createElement('div');
