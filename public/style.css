@@ -142,6 +142,14 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
     animation: fadeIn 0.5s ease;
 }
 
+/* --- AWAL PENYEMPURNAAN GAMBAR --- */
+.chat-message img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+/* --- AKHIR PENYEMPURNAAN GAMBAR --- */
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .ai-message h3 { margin-top: 0; margin-bottom: 8px; color: var(--accent-color-hover); font-size: 1.1rem; }
@@ -151,16 +159,13 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
 .ai-message p:last-child { margin-bottom: 0; }
 .ai-message hr { border: none; border-top: 1px solid #d1d5db; margin: 15px 0; }
 
-/* --- AWAL PENYEMPURNAAN --- */
-/* Memastikan link dapat diklik di semua perangkat */
 .chat-link { 
     color: var(--accent-color-hover); 
     text-decoration: underline; 
     font-weight: 600;
-    position: relative; /* Mengangkat posisi link */
-    z-index: 1;       /* Memastikan di atas elemen lain */
+    position: relative;
+    z-index: 1;
 }
-/* --- AKHIR PENYEMPURNAAN --- */
 
 .choice-container { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 
@@ -177,6 +182,45 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
 .user-message { background-color: var(--user-msg-bg); align-self: flex-end; color: #14532d; border-bottom-right-radius: 5px; }
 .ai-message, .ai-system-message { background-color: var(--ai-msg-bg); align-self: flex-start; border-bottom-left-radius: 5px; }
 .ai-system-message { font-style: italic; color: var(--secondary-text); width: 100%; text-align: center; max-width: 100%; background-color: transparent; padding: 0; animation: none; }
+
+/* --- AWAL PENYEMPURNAAN GAMBAR --- */
+#image-preview-container {
+    padding: 10px 20px 0 20px;
+    background-color: rgba(255,255,255,0.7);
+    display: none; /* Defaultnya tersembunyi */
+}
+
+#image-preview-box {
+    position: relative;
+    display: inline-block;
+}
+
+#preview-image {
+    max-height: 80px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+}
+
+#remove-image-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+/* --- AKHIR PENYEMPURNAAN GAMBAR --- */
+
 .input-container { display: flex; padding: 12px; border-top: 1px solid #d1d5db; gap: 10px; align-items: center; flex-shrink: 0; background-color: rgba(255,255,255,0.7); }
 
 #user-input {
@@ -186,13 +230,13 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
 }
 #user-input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2); }
 
-#send-btn, #voice-btn, #end-chat-btn {
+#send-btn, #voice-btn, #end-chat-btn, #attach-btn {
     flex-shrink: 0; width: 44px; height: 44px; border: none; border-radius: 50%; color: white;
     cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease-in-out;
 }
 
-#send-btn:hover, #voice-btn:hover { transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-#send-btn, #voice-btn { background-color: var(--accent-color); }
+#send-btn:hover, #voice-btn:hover, #attach-btn:hover { transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+#send-btn, #voice-btn, #attach-btn { background-color: var(--accent-color); }
 #end-chat-btn { background-color: #6b7280; font-weight: 600; font-size: 0.7rem; padding: 0; }
 #voice-btn.recording { background-color: var(--danger-color); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 5px 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
