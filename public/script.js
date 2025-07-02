@@ -19,12 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const doctorInfoBox = document.getElementById('doctor-info-box');
     const doctorInfoClose = document.getElementById('doctor-info-close');
 
-    // --- AWAL PENYEMPURNAAN GAMBAR ---
-    const attachBtn = document.getElementById('attach-btn');
-    const imageUploadInput = document.getElementById('image-upload-input');
-    const imagePreviewContainer = document.getElementById('image-preview-container');
-    // --- AKHIR PENYEMPURNAAN GAMBAR ---
-
     // State aplikasi
     let conversationHistory = []; 
     let abortController = null;
@@ -32,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRecording = false;
     let audioContext = null;
     let currentMode = 'assistant';
-    let selectedImageData = null; // State untuk menyimpan data gambar
 
     // State untuk Tes Kepribadian
     let isTesting = false;
@@ -123,11 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceBtn.addEventListener('click', toggleMainRecording);
         endChatBtn.addEventListener('click', handleCancelResponse);
         
-        // --- AWAL PENYEMPURNAAN GAMBAR ---
-        attachBtn.addEventListener('click', () => imageUploadInput.click());
-        imageUploadInput.addEventListener('change', handleImageUpload);
-        // --- AKHIR PENYEMPURNAAN GAMBAR ---
-
         userInput.addEventListener('input', () => {
             userInput.style.height = 'auto';
             userInput.style.height = (userInput.scrollHeight) + 'px';
@@ -141,36 +129,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // --- AWAL PENYEMPURNAAN ---
+        // Logika event handler untuk SpeechRecognition diubah
         if (recognition) {
-            recognition.onresult = (event) => { 
-                userInput.value = event.results[0][0].transcript; 
-                updateButtonVisibility(); 
-                if (currentMode === 'assistant') {
-                    // Do nothing, wait for onend
-                } else {
-                    handleSendMessage();
-                }
+            // 'onresult' hanya akan mengisi kotak input dengan hasil suara.
+            recognition.onresult = (event) => {
+                userInput.value = event.results[0][0].transcript;
+                updateButtonVisibility(); // Perbarui tampilan tombol kirim
             };
-            recognition.onstart = () => { 
-                isRecording = true; 
-                voiceBtn.classList.add('recording'); 
-                statusDiv.textContent = "Saya mendengarkan..."; 
-                updateButtonVisibility(); 
+
+            recognition.onstart = () => {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                statusDiv.textContent = "Saya mendengarkan...";
+                updateButtonVisibility();
             };
-            recognition.onend = () => { 
-                isRecording = false; 
-                voiceBtn.classList.remove('recording'); 
-                statusDiv.textContent = ""; 
-                updateButtonVisibility(); 
+
+            // 'onend' akan secara otomatis mengirim pesan jika ada teks di kotak input.
+            recognition.onend = () => {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusDiv.textContent = "";
+                updateButtonVisibility();
+                // Kirim pesan secara otomatis HANYA jika dalam mode 'assistant'
                 if (currentMode === 'assistant' && userInput.value.trim()) {
                     handleSendMessage();
                 }
             };
-            recognition.onerror = (event) => { 
-                console.error("Speech recognition error", event.error); 
-                statusDiv.textContent = "Maaf, saya tidak bisa mendengar."; 
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
             };
         }
+        // --- AKHIR PENYEMPURNAAN ---
     }
     
     function initializeApp(mode = {}) {
@@ -183,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startOverlay.classList.add('hidden');
         chatContainer.innerHTML = '';
         conversationHistory = [];
-        removeImagePreview();
         
         qolbuInfoBox.style.display = 'none';
         doctorInfoBox.style.display = 'none';
@@ -337,15 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
         const userText = userInput.value.trim();
-        if (!userText && !selectedImageData) return; // Jangan kirim jika tidak ada teks atau gambar
-        
-        handleSendMessageWithText(userText, selectedImageData);
+        if (!userText) return;
+        handleSendMessageWithText(userText);
         userInput.value = '';
         userInput.style.height = 'auto';
-        removeImagePreview();
     }
 
-    async function handleSendMessageWithText(text, imageData) {
+    async function handleSendMessageWithText(text) {
         if (isTesting && currentTestType === 'selection') {
             displayMessage(text, 'user');
             const type = text.toLowerCase().includes('stifin') ? 'stifin' : 'mbti';
@@ -359,12 +348,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         conversationHistory.push({ role: 'user', text: text });
-        displayMessage(text, 'user', imageData); // Tampilkan gambar yang diupload
+        displayMessage(text, 'user');
         updateButtonVisibility();
-        await getAIResponse(text, imageData);
+        await getAIResponse(text);
     }
     
-    async function getAIResponse(prompt, imageData = null) {
+    async function getAIResponse(prompt) {
         abortController = new AbortController();
         statusDiv.textContent = "Saya sedang berpikir...";
         updateButtonVisibility();
@@ -372,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const apiResponse = await fetch('/api/chat', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, history: conversationHistory, mode: currentMode, imageData }),
+                body: JSON.stringify({ prompt, history: conversationHistory, mode: currentMode }),
                 signal: abortController.signal
             });
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
@@ -395,40 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- AWAL PENYEMPURNAAN GAMBAR ---
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            selectedImageData = e.target.result;
-            displayImagePreview(selectedImageData);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function displayImagePreview(imageData) {
-        imagePreviewContainer.style.display = 'block';
-        imagePreviewContainer.innerHTML = `
-            <div id="image-preview-box">
-                <img id="preview-image" src="${imageData}" alt="Pratinjau Gambar">
-                <button id="remove-image-btn" title="Hapus Gambar">&times;</button>
-            </div>
-        `;
-        document.getElementById('remove-image-btn').addEventListener('click', removeImagePreview);
-        updateButtonVisibility();
-    }
-
-    function removeImagePreview() {
-        selectedImageData = null;
-        imageUploadInput.value = ''; // Reset input file
-        imagePreviewContainer.innerHTML = '';
-        imagePreviewContainer.style.display = 'none';
-        updateButtonVisibility();
-    }
-    // --- AKHIR PENYEMPURNAAN GAMBAR ---
-
     function speakAsync(text) {
         return new Promise((resolve) => {
             if (!('speechSynthesis' in window)) {
@@ -455,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     let cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, '');
-                    cleanPart = cleanPart.replace(/\[.*?\]\(https?:\/\/[^\s\)]+\)/g, ''); // Hapus link dari ucapan
+                    
                     cleanPart = cleanPart.replace(/\bAI\b/g, 'E-Ai');
 
                     if (cleanPart.trim()) {
@@ -486,30 +441,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateButtonVisibility() {
-        const hasText = userInput.value.trim().length > 0;
-        const hasImage = !!selectedImageData;
+        const isTyping = userInput.value.length > 0;
         const isThinking = !!abortController;
         const isInputDisabled = isTesting || isRecording || isThinking;
 
         userInput.disabled = isInputDisabled;
-        userInput.placeholder = isTesting ? "Jawab melalui tombol..." : (isRecording ? "Mendengarkan..." : "Tulis pesan atau lampirkan gambar...");
+        userInput.placeholder = isTesting ? "Jawab melalui tombol..." : (isRecording ? "Mendengarkan..." : "Tulis pesan untuk saya, Bosku...");
 
         if (isInputDisabled) {
             sendBtn.style.display = 'none';
             voiceBtn.style.display = 'none';
-            attachBtn.style.display = 'none';
-        } else if (hasText || hasImage) {
+        } else if (isTyping) {
             sendBtn.style.display = 'flex';
             voiceBtn.style.display = 'none';
-            attachBtn.style.display = 'none';
         } else {
             sendBtn.style.display = 'none';
             voiceBtn.style.display = 'flex';
-            attachBtn.style.display = 'flex';
         }
         
         voiceBtn.disabled = isThinking || isTesting;
-        attachBtn.disabled = isThinking || isTesting;
     }
 
     function handleCancelResponse() {
@@ -567,28 +517,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return html.replace(/<br>\s*<ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
     }
 
-    function displayMessage(message, sender, imageUrl = null) {
+    function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
-
-        // --- AWAL PENYEMPURNAAN GAMBAR ---
-        if (imageUrl) {
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.alt = "Gambar yang diupload";
-            messageElement.appendChild(img);
-        }
-        // --- AKHIR PENYEMPURNAAN GAMBAR ---
 
         const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
         const buttons = [...message.matchAll(buttonRegex)];
         const cleanMessage = message.replace(buttonRegex, '').trim();
         
-        const textContent = document.createElement('div');
-        if(cleanMessage) {
-            textContent.innerHTML = simpleMarkdownToHTML(cleanMessage);
-            messageElement.appendChild(textContent);
-        }
+        messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
 
         if (buttons.length > 0) {
             const choiceContainer = document.createElement('div');
@@ -604,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.onclick = () => {
                         choiceContainer.querySelectorAll('.choice-button').forEach(btn => btn.disabled = true);
                         button.classList.add('selected');
-                        handleSendMessageWithText(optionText.trim(), null); // Tombol tidak mengirim gambar
+                        handleSendMessageWithText(optionText.trim());
                     };
                     choiceContainer.appendChild(button);
                 });
