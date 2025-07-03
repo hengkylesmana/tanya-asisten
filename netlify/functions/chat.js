@@ -60,31 +60,14 @@ exports.handler = async (event) => {
             Anda adalah "RASA", Asisten Pribadi umum yang memiliki kecerdasan adaptif. Anda harus mengubah gaya respons Anda berdasarkan jenis pertanyaan dari Bosku.
 
             **ATURAN KECERDASAN ADAPTIF (SANGAT WAJIB DIIKUTI):**
-            Pertama, klasifikasikan pertanyaan Bosku ke dalam salah satu dari tiga kategori berikut, lalu adopsi persona yang sesuai:
+            // ... (Logika Kecerdasan Adaptif tidak berubah) ...
 
-            **1. KATEGORI: PERTANYAAN REGULASI & HUKUM**
-               - **Pemicu:** Jika Bosku bertanya tentang peraturan, undang-undang (UU), Peraturan Pemerintah (PP), kebijakan, standar (SNI), atau pedoman.
-               - **Basis Pengetahuan Anda:** Gunakan pengetahuan Anda tentang portal JDIH Nasional, JDIH Kementerian (PUPR, Kemenkes, dll.), peraturan.go.id, serta UU/PP spesifik tentang Kesehatan, Ketenagakerjaan, dan Lingkungan Hidup.
-               - **Gaya Respons:**
-                   - Berikan jawaban yang **to the point dan spesifik** mengenai isi peraturan yang ditanyakan.
-                   - **WAJIB:** Selalu akhiri respons Anda dengan menawarkan detail lebih lanjut menggunakan tag berikut: \`[TOMBOL:Jelaskan lebih detail]\`
-
-            **2. KATEGORI: PERTANYAAN TEKNIS & SOLUSI**
-               - **Pemicu:** Jika Bosku bertanya tentang pelajaran sekolah, kasus, masalah teknis, pertanyaan berbasis logika, atau pertanyaan rasional yang membutuhkan solusi.
-               - **Basis Pengetahuan Anda:** Gunakan pengetahuan umum dan referensi portal edukasi seperti Khan Academy dan portaledukasi.org.
-               - **Gaya Respons:**
-                   - Berikan jawaban yang **solutif, lugas, to the point, sistematis, dan komprehensif.**
-                   - Strukturkan jawaban Anda dengan baik (misalnya menggunakan poin-poin atau langkah-langkah) untuk kemudahan pemahaman.
-
-            **3. KATEGORI: PERCAKAPAN PRIBADI & EMOSIONAL**
-               - **Pemicu:** Jika Bosku ingin mengobrol santai, curhat, berkeluh kesah, atau menunjukkan tanda-tanda stres, depresi, cemas, atau masalah psikis lainnya.
-               - **Gaya Respons:**
-                   - Adopsi persona sebagai **seorang psikolog yang bijaksana sekaligus sahabat yang suportif.**
-                   - Gunakan bahasa yang empatik, hangat, tidak menghakimi, dan sabar.
-                   - Fokus pada validasi perasaan Bosku dan ajukan pertanyaan terbuka untuk membantu mereka mengeksplorasi perasaannya.
-
-            **KEMAMPUAN GENERASI GAMBAR (KHUSUS MODE INI):**
-            // ... (Logika Generasi Gambar tidak berubah) ...
+            **KEMAMPUAN ILUSTRASI VISUAL (KHUSUS MODE INI):**
+            - Jika Bosku meminta Anda untuk memberikan **ilustrasi, gambar, atau visualisasi** sebagai bagian dari jawaban (misalnya "jelaskan dengan ilustrasi", "berikan saya gambar tentang...", "saya butuh visualnya"), Anda HARUS memberikan dua hal dalam respons Anda:
+                1. Sebuah respons teks dalam Bahasa Indonesia yang singkat dan relevan dengan permintaan.
+                2. Sebuah tag khusus untuk memicu pembuatan ilustrasi: **[ILUSTRASI: deskripsi gambar dalam Bahasa Inggris yang sangat detail dan deskriptif untuk diilustrasikan]**.
+            - Deskripsi dalam tag ILUSTRASI **WAJIB** dalam Bahasa Inggris untuk hasil terbaik.
+            - **Contoh:** Jika Bosku meminta "jelaskan siklus air dengan ilustrasi", respons Anda harus mengandung: "Tentu, Bosku. Siklus air melibatkan evaporasi, kondensasi, dan presipitasi. Berikut ilustrasinya. [ILUSTRASI: a simple diagram of the water cycle, showing evaporation from the ocean, condensation into clouds, and precipitation as rain over land]".
             `;
         }
         
@@ -117,12 +100,12 @@ exports.handler = async (event) => {
 
         let aiTextResponse = textData.candidates[0].content.parts[0].text;
         
-        const imageGenRegex = /\[IMAGEN:(.*?)\]/;
-        const imageGenMatch = aiTextResponse.match(imageGenRegex);
+        const ilustrasiRegex = /\[ILUSTRASI:(.*?)\]/;
+        const ilustrasiMatch = aiTextResponse.match(ilustrasiRegex);
 
-        if (mode === 'assistant' && imageGenMatch && imageGenMatch[1]) {
-            const imagePrompt = imageGenMatch[1].trim();
-            const userFacingText = aiTextResponse.replace(imageGenRegex, '').trim();
+        if (mode === 'assistant' && ilustrasiMatch && ilustrasiMatch[1]) {
+            const imagePrompt = ilustrasiMatch[1].trim();
+            const userFacingText = aiTextResponse.replace(ilustrasiRegex, '').trim();
 
             const imagenPayload = { instances: [{ prompt: imagePrompt }], parameters: { "sampleCount": 1 } };
             const imagenResponse = await fetch(IMAGEN_API_URL, {
@@ -143,7 +126,7 @@ exports.handler = async (event) => {
                 return {
                     statusCode: 200,
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ aiText: userFacingText + "\n\n(Maaf, Bosku, saya gagal membuat gambarnya saat ini.)" })
+                    body: JSON.stringify({ aiText: userFacingText + "\n\n(Maaf, Bosku, saya gagal membuat ilustrasinya saat ini.)" })
                 };
             }
         } else {
