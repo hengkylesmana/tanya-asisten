@@ -15,92 +15,124 @@ exports.handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        // --- PENYEMPURNAAN: Ambil imageData dari body ---
+        // PENYEMPURNAAN: Menerima imageData dari frontend
         const { prompt, history, mode, imageData } = body;
 
-        // --- PENYEMPURNAAN: Cek kata kunci untuk generasi gambar ---
-        const isImageGenerationRequest = prompt && (prompt.toLowerCase().includes('buatkan gambar') || prompt.toLowerCase().includes('generate image'));
-
-        if (!prompt && !imageData) {
+        if (!prompt && !imageData) { // Perlu prompt atau gambar
             return { statusCode: 400, body: JSON.stringify({ error: 'Prompt atau gambar tidak boleh kosong.' }) };
         }
         
-        // --- PENYEMPURNAAN: Logika untuk memanggil API yang sesuai ---
-
-        // KASUS 1: Permintaan Generasi Gambar (menggunakan Imagen)
-        if (isImageGenerationRequest && mode === 'assistant') {
-            const imagenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`;
-            const imagePayload = {
-                instances: [{ prompt: prompt }],
-                parameters: { "sampleCount": 1 }
-            };
-
-            const imageApiResponse = await fetch(imagenApiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(imagePayload)
-            });
-
-            const imageDataResult = await imageApiResponse.json();
-
-            if (!imageApiResponse.ok || !imageDataResult.predictions || !imageDataResult.predictions[0].bytesBase64Encoded) {
-                console.error('Error dari Imagen API:', imageDataResult);
-                throw new Error('Gagal membuat gambar dari Google AI.');
-            }
-
-            const generatedImage = `data:image/png;base64,${imageDataResult.predictions[0].bytesBase64Encoded}`;
-
-            return {
-                statusCode: 200,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    aiText: "Tentu, Bosku. Ini gambar yang Anda minta.",
-                    generatedImage: generatedImage 
-                })
-            };
-        }
-
-        // KASUS 2 & 3: Analisis Gambar atau Teks Saja (menggunakan Gemini)
         let systemPrompt;
         const contextHistory = (history || []).slice(0, -1);
-        const basePerspective = `...`; // Perspektif dasar tidak diubah
-        
-        // Logika system prompt untuk mode qolbu, doctor, dll tetap sama
-        if (mode === 'qolbu') { systemPrompt = `...`; } 
-        else if (mode === 'doctor') { systemPrompt = `...`; } 
-        else if (mode === 'psychologist') { systemPrompt = `...`; } 
-        else { systemPrompt = `...`; }
 
-        const fullPrompt = `${systemPrompt}\n\n**RIWAYAT PERCAKAPAN SEBELUMNYA:**\n${contextHistory.map(h => `${h.role === 'user' ? 'Bosku' : 'Saya'}: ${h.text}`).join('\n')}\n\n**PESAN/TUGAS DARI BOSKU SAAT INI:**\nBosku: "${prompt}"\n\n**RESPONS SAYA:**`;
+        const basePerspective = `
+            **PERSPEKTIF KOMUNIKASI (WAJIB):**
+            Anda adalah Asisten Pribadi AI yang profesional dan setia. Pengguna adalah atasan Anda, yang harus selalu Anda sapa dengan hormat menggunakan sebutan "Bosku". Gunakan gaya bahasa yang sopan, membantu, dan efisien, layaknya seorang asisten kepada atasannya. Sebut diri Anda "Saya".
+
+            **FORMAT TAUTAN (WAJIB):**
+            Jika Anda memberikan tautan/link internet (URL), Anda **WAJIB** menggunakan format Markdown berikut: \`[Teks Tampilan](URL)\`. Contoh: \`Untuk informasi lebih lanjut, Anda bisa mengunjungi [situs Halodoc](https://www.halodoc.com)\`.
+        `;
         
+        // PENYEMPURNAAN: Instruksi untuk menangani gambar
+        const imageHandlingInstruction = `
+            **PENANGANAN GAMBAR (JIKA ADA):**
+            Jika Bosku mengirimkan gambar, tugas Anda adalah menganalisisnya. Jelaskan isi gambar tersebut atau jawab pertanyaan spesifik Bosku mengenai gambar itu. Contoh: jika dikirim gambar rontgen, jelaskan apa yang terlihat secara umum. Jika dikirim gambar makanan, identifikasi makanan tersebut.
+        `;
+
+        if (mode === 'qolbu') {
+            systemPrompt = `
+            ${basePerspective}
+            ${imageHandlingInstruction}
+
+            **IDENTITAS DAN PERAN SPESIFIK ANDA SAAT INI (MODE QOLBU):**
+            Anda adalah "Asisten Qolbu", yaitu seorang spesialis rujukan literatur Islam.
+            
+            **METODOLOGI ASISTEN QOLBU (WAJIB DIIKUTI):**
+            Anda akan menjawab berdasarkan pengetahuan dari Al-Qur'an, Hadits, dan tafsir ulama besar. Selalu sebutkan sumber dan berikan disclaimer bahwa jawaban Anda adalah rujukan literasi, bukan fatwa.
+            `;
+        
+        } else if (mode === 'doctor') {
+            systemPrompt = `
+            ${basePerspective}
+            ${imageHandlingInstruction}
+
+            **IDENTITAS DAN PERAN SPESIFIK ANDA SAAT INI:**
+            Anda adalah "Dokter AI RASA", seorang asisten medis AI yang dilatih berdasarkan rujukan ilmu kedokteran terkemuka.
+            
+            **ALUR KOMUNIKASI WAJIB:**
+            Berikan jawaban awal yang lugas. Setelah itu, tawarkan opsi: "[PILIHAN:Berikan penjelasan lengkap|Mulai Sesi Diagnosa]". Jika sesi diagnosa dipilih, ajukan pertanyaan satu per satu dengan alasannya, dan berikan diagnosis sementara setelah 5 pertanyaan.
+            `;
+
+        } else if (mode === 'psychologist') {
+             systemPrompt = `
+            ${basePerspective}
+            // Mode psikolog tidak menangani gambar, jadi instruksi tidak ditambahkan.
+
+            **IDENTITAS DAN PERAN SPESIFIK ANDA SAAT INI:**
+            Anda adalah pemandu Tes Kepribadian dan Potensi Diri. Fokus hanya pada proses tanya jawab tes.
+            `;
+        } else { // mode 'assistant'
+            systemPrompt = `
+            ${basePerspective}
+            ${imageHandlingInstruction}
+
+            **IDENTITAS DAN PERAN SPESIFIK ANDA SAAT INI:**
+            Anda berperan sebagai "RASA", Asisten Pribadi umum yang siap membantu berbagai tugas dan menjawab pertanyaan umum dari Bosku.
+            `;
+        }
+        
+        const fullPrompt = `${systemPrompt}\n\n**RIWAYAT PERCAKAPAN SEBELUMNYA:**\n${contextHistory.map(h => `${h.role === 'user' ? 'Bosku' : 'Saya'}: ${h.text}`).join('\n')}\n\n**PESAN DARI BOSKU SAAT INI:**\nBosku: "${prompt || '(Lihat gambar terlampir)'}"\n\n**RESPONS SAYA:**`;
+        
+        // PENYEMPURNAAN: Membangun payload multimodal untuk Gemini
         const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
         
-        // --- PENYEMPURNAAN: Buat payload sesuai dengan adanya gambar atau tidak ---
-        const parts = [{ text: fullPrompt }];
+        const contentParts = [];
+        contentParts.push({ text: fullPrompt });
+
         if (imageData) {
-            parts.push({
-                inlineData: {
-                    mimeType: "image/png", // Asumsi PNG, bisa juga JPEG
-                    data: imageData
-                }
-            });
+            // Ekstrak MimeType dan data Base64 murni
+            const match = imageData.match(/^data:(image\/.+);base64,(.+)$/);
+            if (match) {
+                const mimeType = match[1];
+                const base64Data = match[2];
+                contentParts.push({
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                    }
+                });
+            }
         }
-        const textPayload = { contents: [{ role: "user", parts: parts }] };
+
+        const payload = {
+            contents: [{
+                role: "user",
+                parts: contentParts
+            }]
+        };
         
-        const textApiResponse = await fetch(geminiApiUrl, {
+        const apiResponse = await fetch(geminiApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(textPayload)
+            body: JSON.stringify(payload)
         });
 
-        const textData = await textApiResponse.json();
+        const responseData = await apiResponse.json();
 
-        if (!textApiResponse.ok || !textData.candidates || !textData.candidates[0].content) {
-            console.error('Error dari Gemini API:', textData);
+        if (!apiResponse.ok || !responseData.candidates || !responseData.candidates[0].content) {
+            console.error('Error dari Gemini API:', responseData);
+            // Cek jika ada block karena safety settings
+            if (responseData.candidates && responseData.candidates[0].finishReason === 'SAFETY') {
+                 return {
+                    statusCode: 200,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ aiText: "Maaf, Bosku. Saya tidak dapat memproses gambar atau permintaan tersebut karena alasan keamanan." })
+                };
+            }
             throw new Error('Gagal mendapat respons dari Google AI.');
         }
 
-        let aiTextResponse = textData.candidates[0].content.parts[0].text;
+        let aiTextResponse = responseData.candidates[0].content.parts[0].text;
         
         return {
             statusCode: 200,
