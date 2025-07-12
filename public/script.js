@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioContext = null;
     let currentMode = 'assistant';
 
-    // State untuk Tes Kepribadian
+    // --- PENYEMPURNAAN: State untuk Tes Kepribadian ---
     let isTesting = false;
     let currentTestType = null; // 'stifin', 'mbti', atau 'selection'
     let testData = {};
     let testScores = {};
     let currentTestQuestionIndex = 0;
 
-    // Basis Data Kecerdasan Tes
+    // --- PENYEMPURNAAN: Basis Data Kecerdasan Tes dari "Teman Curhat RASA" ---
     const fullTestData = {
         stifin: {
             questions: [
@@ -129,40 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- AWAL PENYEMPURNAAN ---
-        // Logika event handler untuk SpeechRecognition diubah
         if (recognition) {
-            // 'onresult' hanya akan mengisi kotak input dengan hasil suara.
-            recognition.onresult = (event) => {
-                userInput.value = event.results[0][0].transcript;
-                updateButtonVisibility(); // Perbarui tampilan tombol kirim
-            };
-
-            recognition.onstart = () => {
-                isRecording = true;
-                voiceBtn.classList.add('recording');
-                statusDiv.textContent = "Saya mendengarkan...";
-                updateButtonVisibility();
-            };
-
-            // 'onend' akan secara otomatis mengirim pesan jika ada teks di kotak input.
-            recognition.onend = () => {
-                isRecording = false;
-                voiceBtn.classList.remove('recording');
-                statusDiv.textContent = "";
-                updateButtonVisibility();
-                // Kirim pesan secara otomatis HANYA jika dalam mode 'assistant'
-                if (currentMode === 'assistant' && userInput.value.trim()) {
-                    handleSendMessage();
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error("Speech recognition error", event.error);
-                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
-            };
+            recognition.onresult = (event) => { userInput.value = event.results[0][0].transcript; updateButtonVisibility(); handleSendMessage(); };
+            recognition.onstart = () => { isRecording = true; voiceBtn.classList.add('recording'); statusDiv.textContent = "Saya mendengarkan..."; updateButtonVisibility(); };
+            recognition.onend = () => { isRecording = false; voiceBtn.classList.remove('recording'); statusDiv.textContent = ""; updateButtonVisibility(); };
+            recognition.onerror = (event) => { console.error("Speech recognition error", event.error); statusDiv.textContent = "Maaf, saya tidak bisa mendengar."; };
         }
-        // --- AKHIR PENYEMPURNAAN ---
     }
     
     function initializeApp(mode = {}) {
@@ -192,10 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
             qolbuInfoBox.style.display = 'block';
             welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap menbantu.";
         } else if (mode.isTest) {
+            // --- PENYEMPURNAAN: Memulai alur tes baru ---
             headerTitle.textContent = "Tes Kepribadian";
             headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
             initiateTestSelection();
-            return; 
+            return; // Hentikan eksekusi lebih lanjut karena alur tes dimulai
         } else if (mode.isDoctor) {
             headerTitle.textContent = "Tanya ke Dokter AI";
             headerSubtitle.textContent = "Saya siap membantu, Bosku";
@@ -212,9 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonVisibility();
     }
     
+    // --- PENYEMPURNAAN: Fungsi-fungsi baru untuk alur tes ---
+
     function initiateTestSelection() {
         isTesting = true;
-        currentTestType = 'selection'; 
+        currentTestType = 'selection'; // Mode awal adalah memilih jenis tes
         const introMessage = `Selamat datang di Tes Kepribadian dan Potensi Diri, Bosku.\n\nSaya menawarkan dua pendekatan untuk membantu Anda lebih mengenal diri:\n- **Pendekatan STIFIn:** Berbasis konsep kecerdasan genetik untuk menemukan "sistem operasi" otak Anda yang dominan.\n- **Pendekatan MBTI:** Salah satu tes kepribadian paling populer di dunia untuk mengidentifikasi preferensi Anda.\n\n---\n\n_Disclaimer: Tes ini adalah pengantar untuk mengenali potensi diri. Untuk hasil yang lebih akurat, disarankan untuk mengikuti tes di Layanan Psikologi Profesional._\n\nSekarang, silakan pilih pendekatan yang ingin Anda gunakan:\n[PILIHAN:Pendekatan STIFIn|Pendekatan MBTI]`;
         
         displayMessage(introMessage, 'ai');
@@ -226,16 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTestType = type;
         const originalTestData = (type === 'stifin') ? fullTestData.stifin : fullTestData.mbti;
 
+        // Ambil sejumlah pertanyaan secara acak untuk variasi
         let questionsToAsk = [];
         if (type === 'stifin') {
             const mainQuestions = originalTestData.questions.filter(q => !q.isDriveQuestion);
             const driveQuestion = originalTestData.questions.find(q => q.isDriveQuestion);
             const shuffledMain = mainQuestions.sort(() => 0.5 - Math.random());
-            questionsToAsk = shuffledMain.slice(0, 5); 
+            questionsToAsk = shuffledMain.slice(0, 5); // Ambil 5 pertanyaan utama
             if (driveQuestion) questionsToAsk.push(driveQuestion);
         } else { 
             const shuffled = originalTestData.questions.sort(() => 0.5 - Math.random());
-            questionsToAsk = shuffled.slice(0, 6); 
+            questionsToAsk = shuffled.slice(0, 6); // Ambil 6 pertanyaan MBTI
         }
 
         testData = {
@@ -274,8 +250,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTestType === 'stifin') {
             const selectedOption = q.options.find(opt => opt.text === choice);
             if (!selectedOption) return;
+            // Jika ini pertanyaan terakhir (drive question), langsung hitung hasil
             if (q.isDriveQuestion) {
-                calculateAndDisplayResult(selectedOption.type); 
+                calculateAndDisplayResult(selectedOption.type); // Kirim 'i' atau 'e'
                 return;
             }
             testScores[selectedOption.type] = (testScores[selectedOption.type] || 0) + 1;
@@ -324,6 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateButtonVisibility();
     }
+
+    // --- Fungsi Inti Lainnya (Sebagian Besar Tidak Berubah) ---
     
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
@@ -335,18 +314,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleSendMessageWithText(text) {
+        // Cek apakah sedang dalam mode pemilihan tes
         if (isTesting && currentTestType === 'selection') {
             displayMessage(text, 'user');
             const type = text.toLowerCase().includes('stifin') ? 'stifin' : 'mbti';
             startActualTest(type);
             return;
         }
+        // Cek apakah sedang dalam proses menjawab tes
         if (isTesting) {
             displayMessage(text, 'user');
             processTestAnswer(text);
             return;
         }
 
+        // Jika bukan mode tes, kirim pesan biasa
         conversationHistory.push({ role: 'user', text: text });
         displayMessage(text, 'user');
         updateButtonVisibility();
@@ -392,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             window.speechSynthesis.cancel();
             
+            // Jangan bicara saat tes untuk alur yang lebih cepat
             if (isTesting) {
                 resolve();
                 return;
@@ -409,10 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         utteranceQueue.push(utterance);
                     }
                 } else {
-                    let cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, '');
-                    
-                    cleanPart = cleanPart.replace(/\bAI\b/g, 'E-Ai');
-
+                    const cleanPart = part.replace(/\[(TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, '');
                     if (cleanPart.trim()) {
                         const utterance = new SpeechSynthesisUtterance(cleanPart);
                         utterance.lang = 'id-ID';
@@ -466,14 +446,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (abortController) abortController.abort();
         window.speechSynthesis.cancel();
         if (recognition && isRecording) recognition.stop();
-        isTesting = false; 
+        isTesting = false; // Batalkan juga mode tes
         statusDiv.textContent = "Dibatalkan.";
         setTimeout(() => { statusDiv.textContent = ""; }, 2000);
         updateButtonVisibility();
     }
 
     function toggleMainRecording() {
-        if (isTesting) return; 
+        if (isTesting) return; // Nonaktifkan suara saat tes
         if (isRecording) {
             recognition.stop();
         } else {
@@ -483,15 +463,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function simpleMarkdownToHTML(text) {
-        const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
-        
         let html = text
             .replace(/\[ARAB\](.*?)\[\/ARAB\]/g, '<span class="arabic-text" dir="rtl">$1</span>')
             .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
             .replace(/_(.*?)_/g, '<i>$1</i>')
             .replace(/###\s*(.*)/g, '<h3>$1</h3>')
-            .replace(/---\n/g, '<hr>')
-            .replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
+            .replace(/---\n/g, '<hr>');
 
         const lines = html.split('\n');
         let inList = false;
@@ -521,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
 
-        const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
+        const buttonRegex = /\[(PILIHAN):(.*?)\]/g;
         const buttons = [...message.matchAll(buttonRegex)];
         const cleanMessage = message.replace(buttonRegex, '').trim();
         
@@ -531,9 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'choice-container';
             buttons.forEach(match => {
-                const buttonType = match[1]; 
                 const options = match[2].split('|');
-                
                 options.forEach(optionText => {
                     const button = document.createElement('button');
                     button.className = 'choice-button';
