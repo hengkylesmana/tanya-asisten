@@ -15,10 +15,8 @@ exports.handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        // PERUBAHAN: Ekstrak data gambar dari body request
         const { prompt, history, mode, imageData, mimeType } = body;
 
-        // PERUBAHAN: Izinkan prompt kosong jika ada gambar
         if (!prompt && !imageData) {
             return { statusCode: 400, body: JSON.stringify({ error: 'Prompt atau gambar tidak boleh kosong.' }) };
         }
@@ -69,12 +67,12 @@ exports.handler = async (event) => {
         
         const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
         
-        // PERUBAHAN: Buat payload yang bisa menangani teks dan gambar (multimodal)
         const parts = [{ text: fullPrompt }];
         if (imageData && mimeType) {
             parts.push({
-                inline_data: {
-                    mime_type: mimeType,
+                // PERBAIKAN: Mengubah 'inline_data' menjadi 'inlineData' sesuai format API
+                inlineData: {
+                    mimeType: mimeType,
                     data: imageData
                 }
             });
