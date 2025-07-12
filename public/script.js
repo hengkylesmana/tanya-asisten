@@ -1,4 +1,4 @@
-// Fungsionalitas JavaScript untuk RASA (dengan fitur gambar)
+// Fungsionalitas JavaScript untuk RASA
 document.addEventListener('DOMContentLoaded', () => {
     // Inisialisasi konstanta elemen DOM
     const chatContainer = document.getElementById('chat-container');
@@ -19,11 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const doctorInfoBox = document.getElementById('doctor-info-box');
     const doctorInfoClose = document.getElementById('doctor-info-close');
 
-    // --- AWAL PENYEMPURNAAN GAMBAR ---
+    // PENYEMPURNAAN: Elemen untuk fungsionalitas upload gambar
     const uploadBtn = document.getElementById('upload-btn');
-    const imageInput = document.getElementById('image-input');
-    let uploadedImageData = null; // Menyimpan data gambar base64
-    // --- AKHIR PENYEMPURNAAN GAMBAR ---
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
 
     // State aplikasi
     let conversationHistory = []; 
@@ -32,14 +31,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRecording = false;
     let audioContext = null;
     let currentMode = 'assistant';
+    let attachedImage = null; // PENYEMPURNAAN: State untuk menyimpan gambar yang akan dikirim
 
-    // State untuk Tes Kepribadian (tidak diubah)
+    // State untuk Tes Kepribadian
     let isTesting = false;
     let currentTestType = null;
     let testData = {};
     let testScores = {};
     let currentTestQuestionIndex = 0;
-    const fullTestData = { /* Data tes lengkap tidak diubah, jadi disembunyikan untuk keringkasan */ };
+
+    // Basis Data Kecerdasan Tes (tidak diubah, tetap sama)
+    const fullTestData = {
+        stifin: {
+            questions: [
+                { question: "Saat belajar hal baru, Anda lebih suka:", options: [ { text: "Menghafal fakta dan detail penting.", type: "S" }, { text: "Memahami logika dan rumus di baliknya.", type: "T" }, { text: "Mencari konsep besar dan polanya.", type: "I" }, { text: "Mendiskusikannya dengan teman atau guru.", type: "F" }, { text: "Langsung mencoba dan praktik.", type: "In" } ] },
+                { question: "Film atau cerita seperti apa yang paling Anda nikmati?", options: [ { text: "Kisah nyata atau dokumenter yang faktual.", type: "S" }, { text: "Cerita detektif atau strategi yang penuh teka-teki.", type: "T" }, { text: "Fiksi ilmiah atau fantasi dengan dunia yang unik.", type: "I" }, { text: "Drama yang menyentuh perasaan dan hubungan antar tokoh.", type: "F" }, { text: "Petualangan seru dengan banyak aksi.", type: "In" } ] },
+                { question: "Jika Anda memiliki uang lebih, Anda akan menggunakannya untuk:", options: [ { text: "Menabung atau investasi yang aman dan jelas hasilnya.", type: "S" }, { text: "Membeli barang berkualitas tinggi yang tahan lama.", type: "T" }, { text: "Berinvestasi pada ide bisnis baru yang berisiko tapi potensial.", type: "I" }, { text: "Mentraktir teman dan keluarga atau berdonasi.", type: "F" }, { text: "Mencoba pengalaman baru seperti traveling atau kursus singkat.", type: "In" } ] },
+                { question: "Dalam kerja kelompok, peran Anda seringkali menjadi:", options: [ { text: "Pencatat detail dan memastikan semua sesuai data.", type: "S" }, { text: "Penentu strategi dan memastikan semuanya logis.", type: "T" }, { text: "Pemberi ide-ide kreatif dan out-of-the-box.", type: "I" }, { text: "Penjaga keharmonisan dan motivator tim.", type: "F" }, { text: "Penghubung dan penengah jika ada masalah.", type: "In" } ] },
+                { question: "Ketika dihadapkan pada masalah, apa yang pertama kali Anda lakukan?", options: [ { text: "Mencari data dan fakta konkret yang pernah terjadi.", type: "S" }, { text: "Menganalisis sebab-akibat dan mencari solusi paling logis.", type: "T" }, { text: "Membayangkan berbagai kemungkinan dan ide-ide baru.", type: "I" }, { text: "Memikirkan dampaknya pada orang lain dan mencari harmoni.", type: "F" }, { text: "Merespon secara spontan dan beradaptasi dengan keadaan.", type: "In" } ] },
+                { question: "Mana yang lebih menggambarkan diri Anda?", isDriveQuestion: true, options: [ { text: "Energi dan ide saya lebih sering muncul dari dalam diri. Saya memikirkannya dulu baru beraksi.", type: "i" }, { text: "Saya mendapatkan energi dan ide dari interaksi dengan dunia luar. Saya lebih suka langsung mencoba.", type: "e" } ] }
+            ],
+            results: { /* ... data hasil STIFin tidak diubah ... */ }
+        },
+        mbti: {
+            questions: [ /* ... data pertanyaan MBTI tidak diubah ... */ ],
+            results: { /* ... data hasil MBTI tidak diubah ... */ }
+        }
+    };
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -69,12 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.addEventListener('click', handleSendMessage);
         voiceBtn.addEventListener('click', toggleMainRecording);
         endChatBtn.addEventListener('click', handleCancelResponse);
-
-        // --- AWAL PENYEMPURNAAN GAMBAR ---
-        uploadBtn.addEventListener('click', () => imageInput.click());
-        imageInput.addEventListener('change', handleImageUpload);
-        // --- AKHIR PENYEMPURNAAN GAMBAR ---
         
+        // PENYEMPURNAAN: Event listener untuk tombol dan input upload
+        uploadBtn.addEventListener('click', () => imageUploadInput.click());
+        imageUploadInput.addEventListener('change', handleImageSelection);
+
         userInput.addEventListener('input', () => {
             userInput.style.height = 'auto';
             userInput.style.height = (userInput.scrollHeight) + 'px';
@@ -93,114 +110,183 @@ document.addEventListener('DOMContentLoaded', () => {
                 userInput.value = event.results[0][0].transcript;
                 updateButtonVisibility();
             };
-            recognition.onstart = () => { isRecording = true; voiceBtn.classList.add('recording'); statusDiv.textContent = "Saya mendengarkan..."; updateButtonVisibility(); };
-            recognition.onend = () => { isRecording = false; voiceBtn.classList.remove('recording'); statusDiv.textContent = ""; updateButtonVisibility(); if (currentMode === 'assistant' && userInput.value.trim()) { handleSendMessage(); } };
-            recognition.onerror = (event) => { console.error("Speech recognition error", event.error); statusDiv.textContent = "Maaf, saya tidak bisa mendengar."; };
+            recognition.onstart = () => {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                statusDiv.textContent = "Saya mendengarkan...";
+                updateButtonVisibility();
+            };
+            recognition.onend = () => {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusDiv.textContent = "";
+                updateButtonVisibility();
+                if (currentMode === 'assistant' && userInput.value.trim()) {
+                    handleSendMessage();
+                }
+            };
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                statusDiv.textContent = "Maaf, saya tidak bisa mendengar.";
+            };
         }
     }
     
     function initializeApp(mode = {}) {
-        // Fungsi ini sebagian besar tetap sama
-        if (!audioContext) { try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); if(audioContext.state === 'suspended') audioContext.resume(); } catch(e) { console.error("Web Audio API tidak didukung."); } }
+        if (!audioContext) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioContext.state === 'suspended') audioContext.resume();
+            } catch(e) { console.error("Web Audio API tidak didukung."); }
+        }
         startOverlay.classList.add('hidden');
         chatContainer.innerHTML = '';
         conversationHistory = [];
+        clearImagePreview(); // Pastikan preview bersih saat mulai
+        
         qolbuInfoBox.style.display = 'none';
         doctorInfoBox.style.display = 'none';
+        
         isTesting = mode.isTest || false;
         currentMode = mode.isQolbu ? 'qolbu' : (mode.isTest ? 'psychologist' : (mode.isDoctor ? 'doctor' : 'assistant'));
+        
         const headerTitle = document.getElementById('header-title');
         const headerSubtitle = document.getElementById('header-subtitle');
         let welcomeMessage = "";
-        if (mode.isQolbu) { headerTitle.textContent = "Asisten Qolbu"; headerSubtitle.textContent = "Menjawab dengan Rujukan Islami"; qolbuInfoBox.style.display = 'block'; welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap membantu. Anda bisa bertanya tentang rujukan islami atau mengirim gambar untuk didiskusikan."; } 
-        else if (mode.isTest) { /* logika tes tidak berubah */ headerTitle.textContent = "Tes Kepribadian"; headerSubtitle.textContent = "Saya akan memandu Anda, Bosku"; initiateTestSelection(); return; } 
-        else if (mode.isDoctor) { headerTitle.textContent = "Tanya ke Dokter AI"; headerSubtitle.textContent = "Saya siap membantu, Bosku"; doctorInfoBox.style.display = 'block'; welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu? Anda juga bisa mengirim foto, misalnya foto ruam kulit atau kemasan obat."; } 
-        else { headerTitle.textContent = "Asisten Pribadi"; headerSubtitle.textContent = "Siap melayani, Bosku"; welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu? Silakan kirim teks atau gambar."; }
+
+        if (mode.isQolbu) {
+            headerTitle.textContent = "Asisten Qolbu";
+            headerSubtitle.textContent = "Menjawab dengan Rujukan Islami";
+            qolbuInfoBox.style.display = 'block';
+            welcomeMessage = "Assalamualaikum, Bosku. Saya Asisten Qolbu siap membantu.";
+        } else if (mode.isTest) {
+            headerTitle.textContent = "Tes Kepribadian";
+            headerSubtitle.textContent = "Saya akan memandu Anda, Bosku";
+            initiateTestSelection();
+            return; 
+        } else if (mode.isDoctor) {
+            headerTitle.textContent = "Tanya ke Dokter AI";
+            headerSubtitle.textContent = "Saya siap membantu, Bosku";
+            doctorInfoBox.style.display = 'block';
+            welcomeMessage = "Selamat datang, Bosku. Saya Dokter AI RASA. Ada keluhan medis yang bisa saya bantu?";
+        } else {
+            headerTitle.textContent = "Asisten Pribadi";
+            headerSubtitle.textContent = "Siap melayani, Bosku";
+            welcomeMessage = "Selamat datang, Bosku. Saya, asisten pribadi Anda, siap mendengarkan. Ada yang bisa saya bantu?";
+        }
+        
         displayMessage(welcomeMessage, 'ai');
         speakAsync(welcomeMessage);
         updateButtonVisibility();
     }
     
-    // --- AWAL FUNGSI BARU UNTUK GAMBAR ---
-    function handleImageUpload(event) {
+    // --- FUNGSI BARU UNTUK MENGELOLA GAMBAR ---
+
+    /**
+     * Menangani pemilihan file gambar. Membaca file sebagai Base64 dan menampilkannya di preview.
+     * @param {Event} event - Event dari input file.
+     */
+    function handleImageSelection(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            uploadedImageData = e.target.result; // Simpan data base64
-            // Tampilkan preview gambar di chat
-            displayMessageWithImagePreview(uploadedImageData);
-            userInput.placeholder = "Ajukan pertanyaan tentang gambar ini...";
-            userInput.focus();
+            attachedImage = e.target.result;
+            displayImagePreview(attachedImage);
+            updateButtonVisibility();
         };
         reader.readAsDataURL(file);
-        imageInput.value = ''; // Reset input file
+        
+        // Reset input value agar bisa memilih file yang sama lagi jika dibatalkan
+        event.target.value = null;
     }
 
-    function displayMessageWithImagePreview(imageData) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('chat-message', 'user-message');
+    /**
+     * Menampilkan thumbnail gambar yang dipilih di area input.
+     * @param {string} imageData - String Base64 dari gambar.
+     */
+    function displayImagePreview(imageData) {
+        imagePreviewContainer.innerHTML = ''; // Bersihkan preview sebelumnya
         
-        const img = document.createElement('img');
-        img.src = imageData;
-        img.classList.add('image-preview');
-        
-        messageElement.appendChild(img);
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-    // --- AKHIR FUNGSI BARU UNTUK GAMBAR ---
+        const previewImg = document.createElement('img');
+        previewImg.src = imageData;
+        previewImg.className = 'image-preview';
 
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'preview-close-btn';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = clearImagePreview;
+
+        imagePreviewContainer.appendChild(previewImg);
+        imagePreviewContainer.appendChild(closeBtn);
+        imagePreviewContainer.style.display = 'block';
+    }
+
+    /**
+     * Membersihkan preview gambar dan mereset state gambar.
+     */
+    function clearImagePreview() {
+        attachedImage = null;
+        imagePreviewContainer.innerHTML = '';
+        imagePreviewContainer.style.display = 'none';
+        updateButtonVisibility();
+    }
+
+    // --- AKHIR FUNGSI BARU ---
+    
     async function handleSendMessage() {
         if (isRecording || isTesting) return;
         const userText = userInput.value.trim();
-        if (!userText && !uploadedImageData) return; // Jangan kirim jika tidak ada teks atau gambar
+        // Kirim pesan jika ada teks ATAU ada gambar yang dilampirkan
+        if (!userText && !attachedImage) return;
 
-        // Hapus preview gambar jika ada
-        const preview = chatContainer.querySelector('.user-message:last-child .image-preview');
-        if (preview) {
-            preview.parentElement.remove();
-        }
-        
-        handleSendMessageWithText(userText, uploadedImageData);
+        handleSendMessageWithText(userText, attachedImage);
         userInput.value = '';
         userInput.style.height = 'auto';
-        userInput.placeholder = "Tulis pesan untuk saya, Bosku...";
-        uploadedImageData = null; // Reset setelah dikirim
+        clearImagePreview();
     }
 
-    async function handleSendMessageWithText(text, imageData = null) {
-        // Logika tes tidak diubah
-        if (isTesting) { /* ... */ return; }
+    async function handleSendMessageWithText(text, image = null) {
+        if (isTesting && currentTestType === 'selection') {
+            displayMessage(text, 'user');
+            const type = text.toLowerCase().includes('stifin') ? 'stifin' : 'mbti';
+            startActualTest(type);
+            return;
+        }
+        if (isTesting) {
+            displayMessage(text, 'user');
+            processTestAnswer(text);
+            return;
+        }
 
-        conversationHistory.push({ role: 'user', text: text });
-        displayMessage(text, 'user', imageData); // Kirim gambar ke displayMessage
+        // PENYEMPURNAAN: Tampilkan gambar di chat jika ada
+        if (image) {
+            displayMessage(image, 'user-image');
+        }
+        // Tampilkan teks jika ada
+        if (text) {
+            conversationHistory.push({ role: 'user', text: text });
+            displayMessage(text, 'user');
+        }
+        
         updateButtonVisibility();
-        await getAIResponse(text, imageData);
+        await getAIResponse(text, image);
     }
     
-    async function getAIResponse(prompt, imageData = null) {
+    async function getAIResponse(prompt, image = null) {
         abortController = new AbortController();
-        
-        // --- PENYEMPURNAAN: Tampilkan indikator loading ---
-        const loadingMessageId = `loading-${Date.now()}`;
-        displayMessage("...", 'ai', null, true, loadingMessageId);
-        statusDiv.textContent = "Saya sedang memproses...";
-        // --- AKHIR PENYEMPURNAAN ---
-
+        statusDiv.textContent = "Saya sedang berpikir...";
         updateButtonVisibility();
 
         try {
-            const payload = { 
-                prompt, 
-                history: conversationHistory, 
-                mode: currentMode 
+            // PENYEMPURNAAN: Kirim data gambar ke backend
+            const payload = {
+                prompt,
+                history: conversationHistory,
+                mode: currentMode,
+                imageData: image
             };
-            if (imageData) {
-                // Hanya kirim data base64-nya, tanpa prefix
-                payload.imageData = imageData.split(',')[1];
-            }
 
             const apiResponse = await fetch('/api/chat', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -208,27 +294,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 signal: abortController.signal
             });
             if (!apiResponse.ok) throw new Error(`Server error: ${apiResponse.status}`);
-            
             const result = await apiResponse.json();
+            const responseText = result.aiText || `Maaf, Bosku. Bisa diulangi lagi?`;
             
-            // --- PENYEMPURNAAN: Hapus loading dan tampilkan hasil ---
-            const loadingElement = document.getElementById(loadingMessageId);
-            if (loadingElement) {
-                loadingElement.remove();
-            }
-            // --- AKHIR PENYEMPURNAAN ---
-
-            const responseText = result.aiText || (result.generatedImage ? "Berikut hasilnya, Bosku." : "Maaf, Bosku. Bisa diulangi lagi?");
-            
-            if (responseText || result.generatedImage) {
+            if (responseText) {
                 conversationHistory.push({ role: 'ai', text: responseText });
-                displayMessage(responseText, 'ai', result.generatedImage);
+                displayMessage(responseText, 'ai');
                 await speakAsync(responseText);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-               const loadingElement = document.getElementById(loadingMessageId);
-               if (loadingElement) loadingElement.remove();
                displayMessage(`Maaf, Bosku, ada gangguan koneksi atau respons dibatalkan.`, 'ai-system');
             }
         } finally {
@@ -238,74 +313,89 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function speakAsync(text) { /* Fungsi ini tidak diubah */ return new Promise(resolve => resolve()); }
+    function speakAsync(text) {
+        // Fungsi speakAsync tidak diubah
+        return new Promise((resolve) => {
+             if (!('speechSynthesis' in window) || isTesting) {
+                resolve();
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text.replace(/\[(ARAB|TOMBOL|PILIHAN):.*?\]/g, '').replace(/[*#_]/g, ''));
+            utterance.lang = 'id-ID';
+            utterance.onend = () => resolve();
+            utterance.onerror = (e) => { console.error("Speech synthesis error:", e); resolve(); };
+            window.speechSynthesis.speak(utterance);
+        });
+    }
 
     function updateButtonVisibility() {
         const isTyping = userInput.value.length > 0;
         const isThinking = !!abortController;
+        const isImageAttached = !!attachedImage;
         const isInputDisabled = isTesting || isRecording || isThinking;
+        const canShowUpload = !isTesting && !isThinking && !isRecording && !isImageAttached;
 
         userInput.disabled = isInputDisabled;
         userInput.placeholder = isTesting ? "Jawab melalui tombol..." : (isRecording ? "Mendengarkan..." : "Tulis pesan untuk saya, Bosku...");
-        
-        // --- PENYEMPURNAAN: Logika visibilitas tombol ---
-        if (isInputDisabled) {
-            sendBtn.style.display = 'none';
-            voiceBtn.style.display = 'none';
-            uploadBtn.style.display = 'none';
-        } else if (isTyping || uploadedImageData) { // Tampilkan send jika ada teks ATAU gambar
-            sendBtn.style.display = 'flex';
-            voiceBtn.style.display = 'none';
-            uploadBtn.style.display = 'none';
-        } else {
-            sendBtn.style.display = 'none';
-            voiceBtn.style.display = 'flex';
-            uploadBtn.style.display = 'flex';
-        }
+
+        sendBtn.style.display = (isTyping || isImageAttached) && !isInputDisabled ? 'flex' : 'none';
+        voiceBtn.style.display = !isTyping && !isImageAttached && !isInputDisabled ? 'flex' : 'none';
+        uploadBtn.style.display = canShowUpload ? 'flex' : 'none';
         
         voiceBtn.disabled = isThinking || isTesting;
         uploadBtn.disabled = isThinking || isTesting;
-        // --- AKHIR PENYEMPURNAAN ---
     }
 
-    function handleCancelResponse() { /* Fungsi ini tidak diubah */ }
-    function toggleMainRecording() { /* Fungsi ini tidak diubah */ }
-    function simpleMarkdownToHTML(text) { /* Fungsi ini tidak diubah */ return text; }
+    function handleCancelResponse() {
+        if (abortController) abortController.abort();
+        window.speechSynthesis.cancel();
+        if (recognition && isRecording) recognition.stop();
+        isTesting = false; 
+        statusDiv.textContent = "Dibatalkan.";
+        setTimeout(() => { statusDiv.textContent = ""; }, 2000);
+        updateButtonVisibility();
+    }
 
-    function displayMessage(message, sender, imageData = null, isLoading = false, elementId = null) {
+    function toggleMainRecording() {
+        if (isTesting) return; 
+        if (isRecording) {
+            recognition.stop();
+        } else {
+            if ('speechSynthesis'in window) window.speechSynthesis.cancel();
+            recognition.start();
+        }
+    }
+
+    function simpleMarkdownToHTML(text) {
+        // Fungsi ini tidak diubah
+        const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
+        let html = text
+            .replace(/\[ARAB\](.*?)\[\/ARAB\]/g, '<span class="arabic-text" dir="rtl">$1</span>')
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+            .replace(/_(.*?)_/g, '<i>$1</i>')
+            .replace(/###\s*(.*)/g, '<h3>$1</h3>')
+            .replace(/---\n/g, '<hr>')
+            .replace(markdownLinkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>');
+        return html.replace(/\n/g, '<br>');
+    }
+
+    function displayMessage(message, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', `${sender}-message`);
-        if (elementId) {
-            messageElement.id = elementId;
-        }
 
-        // --- PENYEMPURNAAN: Menangani tampilan gambar dan loading ---
-        if (isLoading) {
-            const spinner = document.createElement('div');
-            spinner.className = 'loading-spinner';
-            messageElement.appendChild(spinner);
+        // PENYEMPURNAAN: Menangani pesan gambar
+        if (sender === 'user-image') {
+            const img = document.createElement('img');
+            img.src = message;
+            messageElement.appendChild(img);
         } else {
-            // Tampilkan gambar jika ada (baik dari user atau AI)
-            if (imageData) {
-                const img = document.createElement('img');
-                img.src = imageData;
-                // Beri kelas berbeda untuk preview user dan gambar dari AI
-                img.className = sender === 'user' ? 'image-preview' : 'ai-image-display';
-                messageElement.appendChild(img);
-            }
-
-            // Proses teks pesan
             const buttonRegex = /\[(PILIHAN|TOMBOL):(.*?)\]/g;
             const buttons = [...message.matchAll(buttonRegex)];
             const cleanMessage = message.replace(buttonRegex, '').trim();
             
-            if (cleanMessage) {
-                const textElement = document.createElement('div');
-                textElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
-                messageElement.appendChild(textElement);
-            }
+            messageElement.innerHTML = simpleMarkdownToHTML(cleanMessage);
 
-            // Proses tombol (jika ada)
             if (buttons.length > 0) {
                 const choiceContainer = document.createElement('div');
                 choiceContainer.className = 'choice-container';
@@ -326,18 +416,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageElement.appendChild(choiceContainer);
             }
         }
-        // --- AKHIR PENYEMPURNAAN ---
 
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
     
     // Fungsi-fungsi tes kepribadian tidak diubah
-    function initiateTestSelection() { /* ... */ }
-    function startActualTest(type) { /* ... */ }
-    function displayNextTestQuestion() { /* ... */ }
-    function processTestAnswer(choice) { /* ... */ }
-    function calculateAndDisplayResult(stifinDrive = null) { /* ... */ }
-
+    function initiateTestSelection() { /* ... tidak diubah ... */ }
+    function startActualTest(type) { /* ... tidak diubah ... */ }
+    function displayNextTestQuestion() { /* ... tidak diubah ... */ }
+    function processTestAnswer(choice) { /* ... tidak diubah ... */ }
+    function calculateAndDisplayResult(stifinDrive = null) { /* ... tidak diubah ... */ }
+    
     init();
 });
