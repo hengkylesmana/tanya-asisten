@@ -142,6 +142,7 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
     animation: fadeIn 0.5s ease;
 }
 
+/* PENYEMPURNAAN: Style untuk gambar di dalam chat */
 .chat-message .chat-image {
     max-width: 100%;
     border-radius: 12px;
@@ -182,9 +183,10 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
 .ai-message, .ai-system-message { background-color: var(--ai-msg-bg); align-self: flex-start; border-bottom-left-radius: 5px; }
 .ai-system-message { font-style: italic; color: var(--secondary-text); width: 100%; text-align: center; max-width: 100%; background-color: transparent; padding: 0; animation: none; }
 
+/* PENYEMPURNAAN: Style untuk preview gambar sebelum dikirim */
 .image-preview-container {
     padding: 0 12px;
-    display: none; 
+    display: none; /* Default tersembunyi */
     align-items: center;
     gap: 10px;
     background-color: rgba(255,255,255,0.7);
@@ -226,7 +228,7 @@ header:hover { background-color: rgba(34, 197, 94, 0.1); }
 
 #send-btn:hover, #voice-btn:hover, #upload-btn:hover { transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 #send-btn, #voice-btn, #upload-btn { background-color: var(--accent-color); }
-#upload-btn { background-color: #6b7280; } 
+#upload-btn { background-color: #6b7280; } /* Warna beda untuk upload */
 #end-chat-btn { background-color: #6b7280; font-weight: 600; font-size: 0.7rem; padding: 0; }
 #voice-btn.recording { background-color: var(--danger-color); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 5px 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -303,39 +305,6 @@ footer p {
 .start-content .modal-button:hover { transform: translateY(-3px); box-shadow: 0 7px 25px rgba(34, 197, 94, 0.3); }
 .start-content .modal-button.secondary { background-color: transparent; color: var(--accent-color); border: 2px solid var(--accent-color); box-shadow: none; }
 .start-content .modal-button.secondary:hover { background-color: var(--accent-color); color: white; }
-
-/* PENYEMPURNAAN: Indikator Pengetikan AI */
-#typing-indicator {
-    padding: 18px 20px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.typing-dot {
-    width: 8px;
-    height: 8px;
-    background-color: #9ca3af; /* Warna abu-abu netral */
-    border-radius: 50%;
-    animation: typing-bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-dot:nth-child(1) {
-    animation-delay: -0.32s;
-}
-
-.typing-dot:nth-child(2) {
-    animation-delay: -0.16s;
-}
-
-@keyframes typing-bounce {
-    0%, 80%, 100% {
-        transform: scale(0);
-    } 40% {
-        transform: scale(1.0);
-    }
-}
-
 
 @media (max-width: 768px) {
     body { padding: 0; align-items: flex-start; }
